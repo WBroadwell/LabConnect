@@ -1,10 +1,11 @@
 import uuid
 
-from flask import jsonify, request
+from flask import Blueprint, jsonify, request
 
-from app.api import api_bp
 from app.database import db
 from app.models import Opportunity, User
+
+api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 
 @api_bp.route("/health", methods=["GET"])

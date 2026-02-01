@@ -24,7 +24,7 @@ def create_app(config_name=None):
     CORS(app)
     db.init_app(app)
 
-    from app.api import api_bp
+    from app.routes import api_bp
 
     app.register_blueprint(api_bp)
 
