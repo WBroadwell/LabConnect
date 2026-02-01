@@ -3,7 +3,7 @@ import uuid
 from flask import jsonify, request
 
 from app.api import api_bp
-from app.extensions import db
+from app.database import db
 from app.models import Opportunity, User
 
 
