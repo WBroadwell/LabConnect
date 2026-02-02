@@ -29,6 +29,8 @@ def create_app(config_name=None):
     app.register_blueprint(api_bp)
 
     with app.app_context():
+        # Drop and recreate all tables for clean dev state
+        db.drop_all()
         db.create_all()
         _create_default_admin()
 

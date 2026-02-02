@@ -194,3 +194,71 @@ def get_opportunity(opportunity_id):
     if not opportunity:
         return jsonify({"error": "Opportunity not found"}), 404
     return jsonify(opportunity.to_dict())
+
+
+@api_bp.route("/opportunities/<string:opportunity_id>", methods=["PUT"])
+@require_auth
+def update_opportunity(opportunity_id):
+    """Update an opportunity. Only the creator or admin can update."""
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        return jsonify({"error": "Opportunity not found"}), 404
+
+    # Check if user is the creator or an admin
+    if opportunity.created_by_id != request.current_user.id and not request.current_user.is_admin:
+        return jsonify({"error": "Not authorized to edit this opportunity"}), 403
+
+    data = request.get_json()
+
+    # Update fields if provided
+    if "name" in data:
+        opportunity.name = data["name"]
+    if "title" in data:
+        opportunity.title = data["title"]
+    if "application_due" in data:
+        opportunity.application_due = data["application_due"]
+    if "type" in data:
+        opportunity.type = data["type"]
+    if "hourlyPay" in data:
+        opportunity.hourly_pay = data["hourlyPay"]
+    if "credits" in data:
+        opportunity.credits = data["credits"]
+    if "description" in data:
+        opportunity.description = data["description"]
+    if "recommended_experience" in data:
+        opportunity.recommended_experience = data["recommended_experience"]
+    if "location" in data:
+        opportunity.location = data["location"]
+    if "years" in data:
+        opportunity.years = data["years"]
+
+    db.session.commit()
+    return jsonify(opportunity.to_dict())
+
+
+@api_bp.route("/opportunities/<string:opportunity_id>", methods=["DELETE"])
+@require_auth
+def delete_opportunity(opportunity_id):
+    """Delete an opportunity. Only the creator or admin can delete."""
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        return jsonify({"error": "Opportunity not found"}), 404
+
+    # Check if user is the creator or an admin
+    if opportunity.created_by_id != request.current_user.id and not request.current_user.is_admin:
+        return jsonify({"error": "Not authorized to delete this opportunity"}), 403
+
+    db.session.delete(opportunity)
+    db.session.commit()
+    return jsonify({"message": "Opportunity deleted successfully"})
+
+
+@api_bp.route("/users/<int:user_id>/opportunities", methods=["GET"])
+def get_user_opportunities(user_id):
+    """Get all opportunities created by a specific user."""
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    opportunities = Opportunity.query.filter_by(created_by_id=user_id).all()
+    return jsonify([opp.to_dict() for opp in opportunities])

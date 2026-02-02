@@ -5,6 +5,7 @@ import { User } from "@/types";
 
 interface AuthUser extends User {
   can_create_opportunities: boolean;
+  is_admin: boolean;
 }
 
 interface AuthContextType {

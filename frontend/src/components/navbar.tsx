@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, User, LogOut } from "lucide-react";
+import { Menu, User, LogOut, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,7 +19,6 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/opportunities", label: "Opportunities" },
   { href: "/professors", label: "Professors" },
-  { href: "/about", label: "About" },
 ];
 
 export function Navbar() {
@@ -83,6 +82,12 @@ export function Navbar() {
                       </p>
                     </div>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <UserCircle className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setTestUserId(null)}>
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign Out
