@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      setIsLoading(true);
       try {
         const response = await fetch("http://localhost:5000/api/auth/me", {
           headers: {
@@ -49,13 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
         });
         const data = await response.json();
+        console.log("Auth response:", data);
         if (data.authenticated) {
           setUser(data.user);
         } else {
           setUser(null);
         }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
+      } catch (err) {
+        // Backend might not be running - fail silently
+        console.log("Auth fetch failed:", err);
         setUser(null);
       } finally {
         setIsLoading(false);

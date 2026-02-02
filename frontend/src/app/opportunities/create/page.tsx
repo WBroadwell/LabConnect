@@ -125,7 +125,7 @@ export default function CreateOpportunityPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <Card>
-        <CardHeader>
+        <CardHeader className="text-lg font-semibold text-center">
           <CardTitle>Create Opportunity</CardTitle>
           <CardDescription>
             Fill out the form below to create a new research opportunity.
@@ -268,7 +268,7 @@ export default function CreateOpportunityPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
                 id="description"
                 name="description"
@@ -276,13 +276,12 @@ export default function CreateOpportunityPage() {
                 onChange={handleInputChange}
                 placeholder="Describe the research opportunity, responsibilities, and goals..."
                 rows={4}
-                required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="recommended_experience">
-                Recommended Experience
+                Recommended Experience (Optional)
               </Label>
               <Textarea
                 id="recommended_experience"
@@ -294,7 +293,7 @@ export default function CreateOpportunityPage() {
               />
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 justify-center">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Creating..." : "Create Opportunity"}
               </Button>

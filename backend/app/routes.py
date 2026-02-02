@@ -163,7 +163,7 @@ def create_opportunity():
     """Create a new opportunity. Requires professor or admin role."""
     data = request.get_json()
 
-    required_fields = ["name", "title", "application_due", "type", "description", "location"]
+    required_fields = ["name", "title", "application_due", "type", "location"]
     for field in required_fields:
         if not data.get(field):
             return jsonify({"error": f"{field} is required"}), 400
@@ -176,7 +176,7 @@ def create_opportunity():
         type=data["type"],
         hourly_pay=data.get("hourlyPay", 0),
         credits=data.get("credits", []),
-        description=data["description"],
+        description=data.get("description", ""),
         recommended_experience=data.get("recommended_experience", ""),
         location=data["location"],
         years=data.get("years", []),

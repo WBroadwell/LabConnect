@@ -21,7 +21,7 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
-    CORS(app)
+    CORS(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "X-User-Id"]}})
     db.init_app(app)
 
     from app.routes import api_bp
@@ -37,19 +37,34 @@ def create_app(config_name=None):
 
 def _create_default_admin():
     """Create a default admin user for testing if it doesn't exist."""
+    from sqlalchemy.exc import ProgrammingError
     from app.models import User
 
     admin_email = os.getenv("ADMIN_EMAIL", "admin@rpi.edu")
-    existing_admin = User.query.filter_by(email=admin_email).first()
 
-    if not existing_admin:
-        admin = User(
-            email=admin_email,
-            name="Admin User",
-            role="admin",
-            title="System Administrator",
-            departments=["Computer Science"],
-        )
-        db.session.add(admin)
-        db.session.commit()
-        print(f"Created default admin user: {admin_email} (ID: {admin.id})")
+    try:
+        existing_admin = User.query.filter_by(email=admin_email).first()
+
+        if not existing_admin:
+            admin = User(
+                email=admin_email,
+                name="Admin User",
+                role="admin",
+                title="System Administrator",
+                departments=["Computer Science"],
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print(f"Created default admin user: {admin_email} (ID: {admin.id})")
+    except ProgrammingError as e:
+        db.session.rollback()
+        if "column" in str(e).lower() and "does not exist" in str(e).lower():
+            print("\n" + "=" * 60)
+            print("DATABASE SCHEMA OUT OF DATE")
+            print("=" * 60)
+            print("The database schema doesn't match the models.")
+            print("Run the following command to reset the database:")
+            print("\n    python reset_db.py\n")
+            print("=" * 60 + "\n")
+            raise SystemExit(1)
+        raise
