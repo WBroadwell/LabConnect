@@ -43,6 +43,8 @@ export default function CreateOpportunityPage() {
     recommended_experience: "",
     location: "",
     years: [] as string[],
+    start_date: "",
+    end_date: "",
   });
 
   // Redirect unauthorized users
@@ -165,14 +167,13 @@ export default function CreateOpportunityPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="application_due">Application Deadline</Label>
+                <Label htmlFor="application_due">Application Deadline (Optional)</Label>
                 <Input
                   id="application_due"
                   name="application_due"
                   type="date"
                   value={formData.application_due}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -193,6 +194,30 @@ export default function CreateOpportunityPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="start_date">Start Date (Optional)</Label>
+                <Input
+                  id="start_date"
+                  name="start_date"
+                  type="date"
+                  value={formData.start_date}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="end_date">End Date (Optional)</Label>
+                <Input
+                  id="end_date"
+                  name="end_date"
+                  type="date"
+                  value={formData.end_date}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
 

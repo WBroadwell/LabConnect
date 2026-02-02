@@ -8,6 +8,29 @@ from app.models import Opportunity, User
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
+# Department descriptions for RPI schools/departments
+DEPARTMENT_DESCRIPTIONS = {
+    "Biomedical Engineering": "Applying engineering principles to medicine and biology for healthcare advancements, including medical devices, tissue engineering, and biomaterials.",
+    "Chemical and Biological Engineering": "Designing processes for chemical production and biological systems, spanning pharmaceuticals, energy, and sustainable manufacturing.",
+    "Civil and Environmental Engineering": "Building sustainable infrastructure and protecting our environment through innovative design and engineering solutions.",
+    "Computer Science": "Advancing computing theory and practice, from algorithms and systems to artificial intelligence and software engineering.",
+    "Electrical, Computer, and Systems Engineering": "Pioneering innovations in electronics, computing systems, and complex system design for modern technology.",
+    "Industrial and Systems Engineering": "Optimizing complex systems and processes to improve efficiency in manufacturing, logistics, and operations.",
+    "Materials Science and Engineering": "Discovering and developing new materials that enable technological advances across industries.",
+    "Mechanical, Aerospace, and Nuclear Engineering": "Engineering mechanical systems, aircraft, spacecraft, and nuclear technologies for the future.",
+    "Mathematics": "Exploring pure and applied mathematics, providing foundations for science, engineering, and data analysis.",
+    "Physics, Applied Physics, and Astronomy": "Investigating the fundamental laws of nature and applying physics to solve real-world problems.",
+    "Chemistry and Chemical Biology": "Understanding matter at the molecular level and developing new chemical processes and compounds.",
+    "Biology": "Studying living organisms and life processes, from molecular biology to ecology and evolution.",
+    "Earth and Environmental Sciences": "Researching Earth systems, climate, geology, and environmental processes for a sustainable future.",
+    "Cognitive Science": "Exploring the nature of mind and intelligence through interdisciplinary research in psychology, neuroscience, and AI.",
+    "Economics": "Analyzing economic systems, markets, and policy to understand resource allocation and decision-making.",
+    "Science and Technology Studies": "Examining the social, cultural, and political dimensions of science and technology.",
+    "Architecture": "Designing buildings and spaces that shape how we live, work, and interact with our environment.",
+    "Arts": "Fostering creativity and expression through visual arts, music, and digital media.",
+    "Communication and Media": "Studying communication processes and media systems in the digital age.",
+}
+
 
 def require_auth(f):
     """Decorator to require authentication for a route."""
@@ -69,11 +92,14 @@ def get_current_user_info():
     user = get_current_user()
     if not user:
         return jsonify({"authenticated": False, "user": None})
+    # Include saved opportunity IDs for quick reference
+    saved_ids = [opp.id for opp in user.saved]
     return jsonify({
         "authenticated": True,
         "user": {
             **user.to_dict(),
             "can_create_opportunities": user.can_create_opportunities,
+            "saved_opportunity_ids": saved_ids,
         }
     })
 
@@ -151,6 +177,60 @@ def get_professor(professor_id):
     return jsonify(professor.to_dict(include_opportunities=True))
 
 
+@api_bp.route("/departments", methods=["GET"])
+def get_departments():
+    """Get all departments that have at least one professor, with descriptions."""
+    professors = User.query.filter_by(role="professor").all()
+
+    # Count professors per department
+    department_counts = {}
+    for prof in professors:
+        for dept in (prof.departments or []):
+            department_counts[dept] = department_counts.get(dept, 0) + 1
+
+    # Build response with only departments that have professors
+    departments = []
+    for dept_name, count in sorted(department_counts.items()):
+        departments.append({
+            "name": dept_name,
+            "description": DEPARTMENT_DESCRIPTIONS.get(dept_name, ""),
+            "professor_count": count,
+        })
+
+    return jsonify(departments)
+
+
+@api_bp.route("/departments/<path:department_name>", methods=["GET"])
+def get_department(department_name):
+    """Get a specific department with its professors."""
+    # URL decode and normalize the department name
+    import urllib.parse
+    decoded_name = urllib.parse.unquote(department_name)
+
+    # Find matching department (case-insensitive)
+    matching_dept = None
+    for dept in DEPARTMENT_DESCRIPTIONS.keys():
+        if dept.lower() == decoded_name.lower():
+            matching_dept = dept
+            break
+
+    if not matching_dept:
+        return jsonify({"error": "Department not found"}), 404
+
+    # Get professors in this department
+    professors = User.query.filter_by(role="professor").all()
+    dept_professors = [
+        prof.to_dict() for prof in professors
+        if matching_dept in (prof.departments or [])
+    ]
+
+    return jsonify({
+        "name": matching_dept,
+        "description": DEPARTMENT_DESCRIPTIONS.get(matching_dept, ""),
+        "professors": dept_professors,
+    })
+
+
 @api_bp.route("/opportunities", methods=["GET"])
 def get_opportunities():
     opportunities = Opportunity.query.all()
@@ -163,7 +243,7 @@ def create_opportunity():
     """Create a new opportunity. Requires professor or admin role."""
     data = request.get_json()
 
-    required_fields = ["name", "title", "application_due", "type", "location"]
+    required_fields = ["name", "title", "type", "location"]
     for field in required_fields:
         if not data.get(field):
             return jsonify({"error": f"{field} is required"}), 400
@@ -172,7 +252,7 @@ def create_opportunity():
         id=str(uuid.uuid4()),
         name=data["name"],
         title=data["title"],
-        application_due=data["application_due"],
+        application_due=data.get("application_due", ""),
         type=data["type"],
         hourly_pay=data.get("hourlyPay", 0),
         credits=data.get("credits", []),
@@ -180,6 +260,8 @@ def create_opportunity():
         recommended_experience=data.get("recommended_experience", ""),
         location=data["location"],
         years=data.get("years", []),
+        start_date=data.get("start_date", ""),
+        end_date=data.get("end_date", ""),
         created_by_id=request.current_user.id,  # Link to professor who created it
     )
     db.session.add(opportunity)
@@ -231,6 +313,10 @@ def update_opportunity(opportunity_id):
         opportunity.location = data["location"]
     if "years" in data:
         opportunity.years = data["years"]
+    if "start_date" in data:
+        opportunity.start_date = data["start_date"]
+    if "end_date" in data:
+        opportunity.end_date = data["end_date"]
 
     db.session.commit()
     return jsonify(opportunity.to_dict())
@@ -262,3 +348,108 @@ def get_user_opportunities(user_id):
 
     opportunities = Opportunity.query.filter_by(created_by_id=user_id).all()
     return jsonify([opp.to_dict() for opp in opportunities])
+
+
+@api_bp.route("/users/<int:user_id>/saved-opportunities", methods=["GET"])
+@require_auth
+def get_saved_opportunities(user_id):
+    """Get all saved opportunities for a user."""
+    # Users can only view their own saved opportunities
+    if request.current_user.id != user_id and not request.current_user.is_admin:
+        return jsonify({"error": "Not authorized"}), 403
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify([opp.to_dict() for opp in user.saved])
+
+
+@api_bp.route("/users/<int:user_id>/saved-opportunities/<string:opportunity_id>", methods=["POST"])
+@require_auth
+def save_opportunity(user_id, opportunity_id):
+    """Save an opportunity for a user."""
+    # Users can only save opportunities for themselves
+    if request.current_user.id != user_id:
+        return jsonify({"error": "Not authorized"}), 403
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        return jsonify({"error": "Opportunity not found"}), 404
+
+    # Check if already saved
+    if opportunity in user.saved:
+        return jsonify({"message": "Opportunity already saved"}), 200
+
+    user.saved.append(opportunity)
+    db.session.commit()
+    return jsonify({"message": "Opportunity saved successfully"}), 201
+
+
+@api_bp.route("/users/<int:user_id>/saved-opportunities/<string:opportunity_id>", methods=["DELETE"])
+@require_auth
+def unsave_opportunity(user_id, opportunity_id):
+    """Remove a saved opportunity for a user."""
+    # Users can only unsave opportunities for themselves
+    if request.current_user.id != user_id:
+        return jsonify({"error": "Not authorized"}), 403
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        return jsonify({"error": "Opportunity not found"}), 404
+
+    if opportunity not in user.saved:
+        return jsonify({"message": "Opportunity was not saved"}), 200
+
+    user.saved.remove(opportunity)
+    db.session.commit()
+    return jsonify({"message": "Opportunity unsaved successfully"})
+
+
+@api_bp.route("/users/<int:user_id>/profile", methods=["PUT"])
+@require_auth
+def update_profile(user_id):
+    """Update user profile (name, departments, profile picture)."""
+    # Users can only update their own profile
+    if request.current_user.id != user_id and not request.current_user.is_admin:
+        return jsonify({"error": "Not authorized"}), 403
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.get_json()
+
+    # Update allowed fields
+    if "name" in data:
+        user.name = data["name"]
+    if "departments" in data:
+        user.departments = data["departments"]
+    if "profile_picture" in data:
+        user.profile_picture = data["profile_picture"]
+    if "title" in data and user.is_professor:
+        user.title = data["title"]
+    if "office" in data:
+        user.office = data["office"]
+    if "website" in data:
+        user.website = data["website"]
+    if "research_interests" in data:
+        user.research_interests = data["research_interests"]
+
+    db.session.commit()
+
+    # Return updated user with saved opportunity IDs
+    saved_ids = [opp.id for opp in user.saved]
+    return jsonify({
+        **user.to_dict(),
+        "can_create_opportunities": user.can_create_opportunities,
+        "saved_opportunity_ids": saved_ids,
+    })

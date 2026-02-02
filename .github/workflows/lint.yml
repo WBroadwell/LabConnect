@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  lint:
+  frontend-lint:
+    name: Frontend (ESLint)
     runs-on: ubuntu-latest
 
     defaults:
@@ -30,3 +31,29 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+
+  backend-lint:
+    name: Backend (Ruff)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff linter
+        run: ruff check .
+
+      - name: Run Ruff formatter check
+        run: ruff format --check .

@@ -18,6 +18,8 @@ export interface Opportunity {
   recommended_experience: string;
   location: string;
   years: string[];
+  start_date: string;
+  end_date: string;
   created_at: string;
   created_by_id: number | null;
   creator?: OpportunityCreator;

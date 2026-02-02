@@ -18,7 +18,8 @@ import { useAuth } from "@/context/auth-context";
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/opportunities", label: "Opportunities" },
-  { href: "/professors", label: "Professors" },
+  { href: "/departments", label: "Departments" },
+  { href: "/profile", label: "Profile", requiresAuth: true },
 ];
 
 export function Navbar() {
@@ -42,20 +43,22 @@ export function Navbar() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex md:items-center md:gap-4">
           <div className="flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-                  pathname === link.href
-                    ? "bg-primary-foreground/20"
-                    : "hover:bg-primary-foreground/10"
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks
+              .filter((link) => !link.requiresAuth || isAuthenticated)
+              .map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+                    pathname === link.href
+                      ? "bg-primary-foreground/20"
+                      : "hover:bg-primary-foreground/10"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
           </div>
 
           {/* Auth Dropdown (for testing) */}
@@ -102,6 +105,12 @@ export function Navbar() {
                     <DropdownMenuItem onClick={() => setTestUserId(1)}>
                       Login as Admin (ID: 1)
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTestUserId(2)}>
+                      Login as Professor (ID: 2)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTestUserId(3)}>
+                      Login as Student (ID: 3)
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
@@ -123,19 +132,52 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {navLinks.map((link) => (
-                <DropdownMenuItem key={link.href} asChild>
-                  <Link
-                    href={link.href}
-                    className={cn(
-                      "w-full",
-                      pathname === link.href && "bg-accent"
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+              {navLinks
+                .filter((link) => !link.requiresAuth || isAuthenticated)
+                .map((link) => (
+                  <DropdownMenuItem key={link.href} asChild>
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        "w-full",
+                        pathname === link.href && "bg-accent"
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              <DropdownMenuSeparator />
+              {!isLoading && isAuthenticated ? (
+                <>
+                  <div className="px-2 py-1.5 text-sm">
+                    <p className="font-medium">{user?.name}</p>
+                    <p className="text-muted-foreground text-xs">{user?.email}</p>
+                  </div>
+                  <DropdownMenuItem onClick={() => setTestUserId(null)}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Test Login
+                  </div>
+                  <DropdownMenuItem onClick={() => setTestUserId(1)}>
+                    <User className="mr-2 h-4 w-4" />
+                    Login as Admin
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTestUserId(2)}>
+                    <User className="mr-2 h-4 w-4" />
+                    Login as Professor
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTestUserId(3)}>
+                    <User className="mr-2 h-4 w-4" />
+                    Login as Student
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,17 +22,49 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/context/auth-context";
-import { Opportunity } from "@/types";
-import { Loader2, MapPin, Calendar, Pencil, Trash2 } from "lucide-react";
+import { Opportunity, RPI_DEPARTMENTS } from "@/types";
+import {
+  Loader2,
+  MapPin,
+  Calendar,
+  Pencil,
+  Trash2,
+  Camera,
+  User as UserIcon,
+  Bookmark,
+  BookmarkCheck,
+  Building2,
+  Mail,
+  GraduationCap,
+  Briefcase,
+} from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: authLoading, testUserId } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, testUserId, refreshUser } = useAuth();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [savedOpportunities, setSavedOpportunities] = useState<Opportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [unsavingId, setUnsavingId] = useState<string | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDepartment, setEditDepartment] = useState("");
+  const [editOffice, setEditOffice] = useState("");
+  const [editResearchInterests, setEditResearchInterests] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -41,10 +73,20 @@ export default function ProfilePage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Fetch user's opportunities
+  // Initialize edit form when user loads
   useEffect(() => {
-    async function fetchOpportunities() {
-      if (!user?.id) return;
+    if (user) {
+      setEditName(user.name);
+      setEditDepartment(user.departments?.[0] || "");
+      setEditOffice(user.office || "");
+      setEditResearchInterests(user.research_interests?.join(", ") || "");
+    }
+  }, [user]);
+
+  // Fetch user's created opportunities (for professors)
+  useEffect(() => {
+    async function fetchCreatedOpportunities() {
+      if (!user?.id || user.role === "student") return;
 
       try {
         const response = await fetch(
@@ -62,10 +104,41 @@ export default function ProfilePage() {
       }
     }
 
-    if (user?.id) {
-      fetchOpportunities();
+    if (user?.id && user.role !== "student") {
+      fetchCreatedOpportunities();
+    } else if (user?.id && user.role === "student") {
+      setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, user?.role]);
+
+  // Fetch saved opportunities (for students)
+  useEffect(() => {
+    async function fetchSavedOpportunities() {
+      if (!user?.id || !testUserId) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/users/${user.id}/saved-opportunities`,
+          {
+            headers: {
+              "X-User-Id": testUserId.toString(),
+            },
+          }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch saved opportunities");
+        }
+        const data = await response.json();
+        setSavedOpportunities(data);
+      } catch (err) {
+        console.error("Error fetching saved opportunities:", err);
+      }
+    }
+
+    if (user?.id && testUserId) {
+      fetchSavedOpportunities();
+    }
+  }, [user?.id, testUserId]);
 
   const handleDelete = async (opportunityId: string) => {
     setDeletingId(opportunityId);
@@ -88,12 +161,123 @@ export default function ProfilePage() {
         throw new Error(data.error || "Failed to delete opportunity");
       }
 
-      // Remove from local state
       setOpportunities((prev) => prev.filter((opp) => opp.id !== opportunityId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleUnsave = async (opportunityId: string) => {
+    if (!user || !testUserId) return;
+
+    setUnsavingId(opportunityId);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/users/${user.id}/saved-opportunities/${opportunityId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-User-Id": testUserId.toString(),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to unsave opportunity");
+      }
+
+      setSavedOpportunities((prev) => prev.filter((opp) => opp.id !== opportunityId));
+    } catch (err) {
+      console.error("Error unsaving opportunity:", err);
+    } finally {
+      setUnsavingId(null);
+    }
+  };
+
+  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !testUserId) return;
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string;
+
+      try {
+        setIsUpdatingProfile(true);
+        const response = await fetch(
+          `http://localhost:5000/api/users/${user.id}/profile`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": testUserId.toString(),
+            },
+            body: JSON.stringify({ profile_picture: base64 }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update profile picture");
+        }
+
+        await refreshUser();
+      } catch (err) {
+        console.error("Error updating profile picture:", err);
+      } finally {
+        setIsUpdatingProfile(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user || !testUserId) return;
+
+    try {
+      setIsUpdatingProfile(true);
+
+      // Parse research interests from comma-separated string
+      const researchInterests = editResearchInterests
+        .split(",")
+        .map((interest) => interest.trim())
+        .filter((interest) => interest.length > 0);
+
+      const updateData: Record<string, unknown> = {
+        name: editName,
+        departments: editDepartment ? [editDepartment] : [],
+      };
+
+      // Only include professor-specific fields for professors
+      if (user.role === "professor" || user.role === "admin") {
+        updateData.office = editOffice;
+        updateData.research_interests = researchInterests;
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/api/users/${user.id}/profile`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Id": testUserId.toString(),
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      await refreshUser();
+      setIsEditingProfile(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    } finally {
+      setIsUpdatingProfile(false);
     }
   };
 
@@ -107,143 +291,373 @@ export default function ProfilePage() {
     );
   }
 
+  const isProfessor = user?.role === "professor" || user?.role === "admin";
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      {/* User Info */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Your account information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <p>
-              <span className="font-medium">Name:</span> {user?.name}
-            </p>
-            <p>
-              <span className="font-medium">Email:</span> {user?.email}
-            </p>
-            <p>
-              <span className="font-medium">Role:</span>{" "}
-              <span className="capitalize">{user?.role}</span>
-            </p>
-            {user?.departments && user.departments.length > 0 && (
-              <p>
-                <span className="font-medium">Departments:</span>{" "}
-                {user.departments.join(", ")}
-              </p>
+      {/* Profile Header Card */}
+      <Card className="mb-8 overflow-hidden">
+        <div className="bg-linear-to-r from-primary/20 via-primary/10 to-transparent h-32" />
+        <CardContent className="relative pb-6">
+          {/* Profile Picture */}
+          <div className="absolute -top-16 left-6">
+            <div className="relative group">
+              <div className="h-32 w-32 rounded-full border-4 border-background bg-muted overflow-hidden shadow-lg">
+                {user?.profile_picture ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.profile_picture}
+                    alt={user.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center bg-primary/10">
+                    <UserIcon className="h-16 w-16 text-primary/40" />
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUpdatingProfile}
+                className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
+              >
+                {isUpdatingProfile ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleProfilePictureChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* Profile Info */}
+          <div className="ml-40 pt-4">
+            {!isEditingProfile ? (
+              <div className="flex items-start justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">{user?.name}</h1>
+                  <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                    {isProfessor ? (
+                      <Briefcase className="h-4 w-4" />
+                    ) : (
+                      <GraduationCap className="h-4 w-4" />
+                    )}
+                    <span className="capitalize">
+                      {user?.title || user?.role}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingProfile(true)}
+                >
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Edit Profile
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="department">Department</Label>
+                  <Select value={editDepartment} onValueChange={setEditDepartment}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RPI_DEPARTMENTS.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {isProfessor && (
+                  <>
+                    <div>
+                      <Label htmlFor="office">Office</Label>
+                      <Input
+                        id="office"
+                        value={editOffice}
+                        onChange={(e) => setEditOffice(e.target.value)}
+                        placeholder="e.g., Lally 123"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="research_interests">Research Interests</Label>
+                      <Input
+                        id="research_interests"
+                        value={editResearchInterests}
+                        onChange={(e) => setEditResearchInterests(e.target.value)}
+                        placeholder="e.g., Machine Learning, Data Science, AI"
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Separate multiple interests with commas
+                      </p>
+                    </div>
+                  </>
+                )}
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveProfile} disabled={isUpdatingProfile}>
+                    {isUpdatingProfile && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                    Save Changes
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
             )}
-            {user?.title && (
-              <p>
-                <span className="font-medium">Title:</span> {user.title}
-              </p>
+
+            {!isEditingProfile && (
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    {user?.email}
+                  </div>
+                  {user?.departments && user.departments.length > 0 && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Building2 className="h-4 w-4" />
+                      {user.departments.join(", ")}
+                    </div>
+                  )}
+                  {isProfessor && user?.office && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      {user.office}
+                    </div>
+                  )}
+                </div>
+                {isProfessor && user?.research_interests && user.research_interests.length > 0 && (
+                  <div className="pt-1">
+                    <p className="text-xs text-muted-foreground mb-2">Research Interests</p>
+                    <div className="flex flex-wrap gap-2">
+                      {user.research_interests.map((interest, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs text-primary"
+                        >
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* User's Opportunities */}
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Your Opportunities</h2>
-        {user?.can_create_opportunities && (
-          <Button asChild>
-            <Link href="/opportunities/create">Create New</Link>
-          </Button>
-        )}
-      </div>
+      {/* Content based on role */}
+      {isProfessor ? (
+        // Professor: Show created opportunities
+        <>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Your Opportunities</h2>
+              <p className="text-muted-foreground text-sm">
+                Opportunities you&apos;ve created for students
+              </p>
+            </div>
+            {user?.can_create_opportunities && (
+              <Button asChild>
+                <Link href="/opportunities/create">Create New</Link>
+              </Button>
+            )}
+          </div>
 
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      )}
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
 
-      {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
-          {error}
-        </div>
-      )}
+          {error && (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
+              {error}
+            </div>
+          )}
 
-      {!isLoading && !error && opportunities.length === 0 && (
-        <div className="rounded-lg border border-border bg-muted/30 p-12 text-center">
-          <p className="text-muted-foreground">
-            You haven&apos;t created any opportunities yet.
-          </p>
-        </div>
-      )}
+          {!isLoading && !error && opportunities.length === 0 && (
+            <div className="rounded-lg border border-border bg-muted/30 p-12 text-center">
+              <Briefcase className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+              <p className="text-muted-foreground">
+                You haven&apos;t created any opportunities yet.
+              </p>
+              <Button asChild className="mt-4">
+                <Link href="/opportunities/create">Create Your First Opportunity</Link>
+              </Button>
+            </div>
+          )}
 
-      {!isLoading && !error && opportunities.length > 0 && (
-        <div className="space-y-4">
-          {opportunities.map((opportunity) => (
-            <Card key={opportunity.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <div>
+          {!isLoading && !error && opportunities.length > 0 && (
+            <div className="space-y-4">
+              {opportunities.map((opportunity) => (
+                <Card key={opportunity.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{opportunity.title}</CardTitle>
+                        <CardDescription>{opportunity.name}</CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/opportunities/${opportunity.id}/edit`}>
+                            <Pencil className="mr-1 h-4 w-4" />
+                            Edit
+                          </Link>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={deletingId === opportunity.id}
+                            >
+                              {deletingId === opportunity.id ? (
+                                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="mr-1 h-4 w-4" />
+                              )}
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Opportunity</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete &quot;{opportunity.title}&quot;?
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(opportunity.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {opportunity.location}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        Due: {opportunity.application_due}
+                      </div>
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                        {opportunity.type}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        // Student: Show saved opportunities
+        <>
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <BookmarkCheck className="h-6 w-6" />
+              Saved Opportunities
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Opportunities you&apos;ve bookmarked for later
+            </p>
+          </div>
+
+          {savedOpportunities.length === 0 ? (
+            <div className="rounded-lg border border-border bg-muted/30 p-12 text-center">
+              <Bookmark className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+              <p className="text-muted-foreground">
+                You haven&apos;t saved any opportunities yet.
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Browse opportunities and click the bookmark icon to save them here.
+              </p>
+              <Button asChild className="mt-4">
+                <Link href="/opportunities">Browse Opportunities</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {savedOpportunities.map((opportunity) => (
+                <Card key={opportunity.id} className="group relative">
+                  <button
+                    onClick={() => handleUnsave(opportunity.id)}
+                    disabled={unsavingId === opportunity.id}
+                    className="absolute right-3 top-3 z-10 rounded-full bg-primary p-2 text-primary-foreground shadow-md transition-transform hover:scale-105"
+                    title="Remove from saved"
+                  >
+                    {unsavingId === opportunity.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <BookmarkCheck className="h-4 w-4" />
+                    )}
+                  </button>
+                  <CardHeader className="pr-14">
                     <CardTitle className="text-lg">{opportunity.title}</CardTitle>
                     <CardDescription>{opportunity.name}</CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/opportunities/${opportunity.id}/edit`}>
-                        <Pencil className="mr-1 h-4 w-4" />
-                        Edit
-                      </Link>
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={deletingId === opportunity.id}
-                        >
-                          {deletingId === opportunity.id ? (
-                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="mr-1 h-4 w-4" />
-                          )}
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Opportunity</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete &quot;{opportunity.title}&quot;?
-                            This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(opportunity.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {opportunity.location}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Due: {opportunity.application_due}
-                  </div>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                    {opportunity.type}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        {opportunity.location}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Due: {opportunity.application_due}
+                      </div>
+                      <div className="flex flex-wrap gap-1 pt-2">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          {opportunity.type}
+                        </span>
+                        {opportunity.credits?.length > 0 && (
+                          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+                            {opportunity.credits.join(", ")} credits
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

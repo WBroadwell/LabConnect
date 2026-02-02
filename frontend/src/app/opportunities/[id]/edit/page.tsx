@@ -48,6 +48,8 @@ export default function EditOpportunityPage() {
     recommended_experience: "",
     location: "",
     years: [] as string[],
+    start_date: "",
+    end_date: "",
   });
 
   // Redirect if not authenticated
@@ -86,6 +88,8 @@ export default function EditOpportunityPage() {
           recommended_experience: data.recommended_experience || "",
           location: data.location || "",
           years: data.years || [],
+          start_date: data.start_date || "",
+          end_date: data.end_date || "",
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
@@ -214,14 +218,13 @@ export default function EditOpportunityPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="application_due">Application Deadline</Label>
+                <Label htmlFor="application_due">Application Deadline (Optional)</Label>
                 <Input
                   id="application_due"
                   name="application_due"
                   type="date"
                   value={formData.application_due}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -242,6 +245,30 @@ export default function EditOpportunityPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="start_date">Start Date (Optional)</Label>
+                <Input
+                  id="start_date"
+                  name="start_date"
+                  type="date"
+                  value={formData.start_date}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="end_date">End Date (Optional)</Label>
+                <Input
+                  id="end_date"
+                  name="end_date"
+                  type="date"
+                  value={formData.end_date}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
 

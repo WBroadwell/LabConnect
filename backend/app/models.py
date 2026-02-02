@@ -1,6 +1,15 @@
 from app.database import db
 
 
+# Association table for saved opportunities (many-to-many)
+saved_opportunities = db.Table(
+    "saved_opportunities",
+    db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
+    db.Column("opportunity_id", db.String(36), db.ForeignKey("opportunities.id"), primary_key=True),
+    db.Column("saved_at", db.DateTime, server_default=db.func.now()),
+)
+
+
 class User(db.Model):
     __tablename__ = "users"
 
@@ -13,14 +22,24 @@ class User(db.Model):
     office = db.Column(db.String(100), nullable=True)
     website = db.Column(db.String(200), nullable=True)
     research_interests = db.Column(db.JSON, nullable=False, default=list)
+    profile_picture = db.Column(db.Text, nullable=True)  # Base64 encoded image or URL
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     # Relationship to opportunities created by this user
     opportunities = db.relationship("Opportunity", back_populates="creator", lazy="dynamic")
 
+    # Relationship to saved opportunities (for students)
+    saved = db.relationship(
+        "Opportunity",
+        secondary=saved_opportunities,
+        lazy="dynamic",
+        backref=db.backref("saved_by_users", lazy="dynamic"),
+    )
+
     @property
     def is_professor(self):
-        return self.role == "professor"
+        """Professors and admins are both treated as professors."""
+        return self.role in ("professor", "admin")
 
     @property
     def is_admin(self):
@@ -31,7 +50,7 @@ class User(db.Model):
         """Professors and admins can create opportunities."""
         return self.role in ("professor", "admin")
 
-    def to_dict(self, include_opportunities=False):
+    def to_dict(self, include_opportunities=False, include_saved=False):
         data = {
             "id": self.id,
             "email": self.email,
@@ -42,10 +61,13 @@ class User(db.Model):
             "office": self.office,
             "website": self.website,
             "research_interests": self.research_interests or [],
+            "profile_picture": self.profile_picture,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
         if include_opportunities:
             data["opportunities"] = [opp.to_dict() for opp in self.opportunities]
+        if include_saved:
+            data["saved_opportunities"] = [opp.to_dict() for opp in self.saved]
         return data
 
 
@@ -55,7 +77,7 @@ class Opportunity(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     title = db.Column(db.String(200), nullable=False)
-    application_due = db.Column(db.String(50), nullable=False)
+    application_due = db.Column(db.String(50), nullable=True)  # Optional application deadline
     type = db.Column(db.String(50), nullable=False)
     hourly_pay = db.Column(db.Float, nullable=False, default=0)
     credits = db.Column(db.JSON, nullable=False, default=list)
@@ -63,6 +85,8 @@ class Opportunity(db.Model):
     recommended_experience = db.Column(db.Text, nullable=True)
     location = db.Column(db.String(200), nullable=False)
     years = db.Column(db.JSON, nullable=False, default=list)
+    start_date = db.Column(db.String(50), nullable=True)  # When the opportunity starts
+    end_date = db.Column(db.String(50), nullable=True)  # When the opportunity ends
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     # Foreign key to the professor who created this opportunity
@@ -74,7 +98,7 @@ class Opportunity(db.Model):
             "id": self.id,
             "name": self.name,
             "title": self.title,
-            "application_due": self.application_due,
+            "application_due": self.application_due or "",
             "type": self.type,
             "hourlyPay": self.hourly_pay,
             "credits": self.credits or [],
@@ -82,6 +106,8 @@ class Opportunity(db.Model):
             "recommended_experience": self.recommended_experience or "",
             "location": self.location,
             "years": self.years or [],
+            "start_date": self.start_date or "",
+            "end_date": self.end_date or "",
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "created_by_id": self.created_by_id,
         }

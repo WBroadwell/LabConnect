@@ -38,7 +38,7 @@ def create_app(config_name=None):
 
 
 def _create_default_admin():
-    """Create a default admin user for testing if it doesn't exist."""
+    """Create default test users for development if they don't exist."""
     from sqlalchemy.exc import ProgrammingError
     from app.models import User
 
@@ -48,6 +48,7 @@ def _create_default_admin():
         existing_admin = User.query.filter_by(email=admin_email).first()
 
         if not existing_admin:
+            # Create admin user (ID: 1)
             admin = User(
                 email=admin_email,
                 name="Admin User",
@@ -56,8 +57,32 @@ def _create_default_admin():
                 departments=["Computer Science"],
             )
             db.session.add(admin)
+
+            # Create test professor (ID: 2)
+            professor = User(
+                email="professor@rpi.edu",
+                name="Dr. Jane Smith",
+                role="professor",
+                title="Associate Professor",
+                departments=["Computer Science"],
+                office="Amos Eaton 123",
+                research_interests=["Machine Learning", "Data Science"],
+            )
+            db.session.add(professor)
+
+            # Create test student (ID: 3)
+            student = User(
+                email="student@rpi.edu",
+                name="John Doe",
+                role="student",
+                departments=["Computer Science"],
+            )
+            db.session.add(student)
+
             db.session.commit()
             print(f"Created default admin user: {admin_email} (ID: {admin.id})")
+            print(f"Created test professor: professor@rpi.edu (ID: {professor.id})")
+            print(f"Created test student: student@rpi.edu (ID: {student.id})")
     except ProgrammingError as e:
         db.session.rollback()
         if "column" in str(e).lower() and "does not exist" in str(e).lower():

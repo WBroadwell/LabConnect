@@ -34,7 +34,7 @@ export function Footer() {
           </p>
           <div className="flex gap-4 text-sm text-primary-foreground/70">
             <Link
-              href="https://github.com/WBroadwell/LabConnect"
+              href="https://github.com/LabConnect-RCOS/LabConnect"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-primary-foreground"
@@ -45,14 +45,19 @@ export function Footer() {
             <Link href="/about" className="hover:text-primary-foreground">
               About
             </Link>
-            <span>|</span>
-            <Link href="/contact" className="hover:text-primary-foreground">
-              Contact
-            </Link>
           </div>
           <p className="text-xs text-primary-foreground/70">
-            &copy; {new Date().getFullYear()} LabConnect. Open source under MIT
-            License.
+            &copy; {new Date().getFullYear()} Rafael Cenzano & LabConnect Team.
+            Open source under{" "}
+            <Link
+              href="https://www.gnu.org/licenses/agpl-3.0.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-primary-foreground"
+            >
+              AGPL-3.0 License
+            </Link>
+            .
           </p>
         </div>
       </div>
