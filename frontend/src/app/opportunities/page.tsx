@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/auth-context";
 
 export default function OpportunitiesPage() {
+  const { canCreateOpportunities, isLoading } = useAuth();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
@@ -11,9 +16,11 @@ export default function OpportunitiesPage() {
             Browse available research opportunities at RPI.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/opportunities/create">Create Opportunity</Link>
-        </Button>
+        {!isLoading && canCreateOpportunities && (
+          <Button asChild>
+            <Link href="/opportunities/create">Create Opportunity</Link>
+          </Button>
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-muted/30 p-12 text-center">

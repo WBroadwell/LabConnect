@@ -7,15 +7,46 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="student")  # 'student', 'professor', or 'admin'
+    title = db.Column(db.String(100), nullable=True)  # e.g., "Associate Professor"
+    departments = db.Column(db.JSON, nullable=False, default=list)  # list of department names
+    office = db.Column(db.String(100), nullable=True)
+    website = db.Column(db.String(200), nullable=True)
+    research_interests = db.Column(db.JSON, nullable=False, default=list)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-    def to_dict(self):
-        return {
+    # Relationship to opportunities created by this user
+    opportunities = db.relationship("Opportunity", back_populates="creator", lazy="dynamic")
+
+    @property
+    def is_professor(self):
+        return self.role == "professor"
+
+    @property
+    def is_admin(self):
+        return self.role == "admin"
+
+    @property
+    def can_create_opportunities(self):
+        """Professors and admins can create opportunities."""
+        return self.role in ("professor", "admin")
+
+    def to_dict(self, include_opportunities=False):
+        data = {
             "id": self.id,
             "email": self.email,
             "name": self.name,
+            "role": self.role,
+            "title": self.title,
+            "departments": self.departments or [],
+            "office": self.office,
+            "website": self.website,
+            "research_interests": self.research_interests or [],
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+        if include_opportunities:
+            data["opportunities"] = [opp.to_dict() for opp in self.opportunities]
+        return data
 
 
 class Opportunity(db.Model):
@@ -34,8 +65,12 @@ class Opportunity(db.Model):
     years = db.Column(db.JSON, nullable=False, default=list)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-    def to_dict(self):
-        return {
+    # Foreign key to the professor who created this opportunity
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    creator = db.relationship("User", back_populates="opportunities")
+
+    def to_dict(self, include_creator=True):
+        data = {
             "id": self.id,
             "name": self.name,
             "title": self.title,
@@ -48,4 +83,14 @@ class Opportunity(db.Model):
             "location": self.location,
             "years": self.years or [],
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_by_id": self.created_by_id,
         }
+        if include_creator and self.creator:
+            data["creator"] = {
+                "id": self.creator.id,
+                "name": self.creator.name,
+                "email": self.creator.email,
+                "title": self.creator.title,
+                "departments": self.creator.departments or [],
+            }
+        return data

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/context/auth-context";
 import {
   Select,
   SelectContent,
@@ -28,9 +29,9 @@ const TYPE_OPTIONS = ["Research", "Internship", "Part-time", "Full-time", "Volun
 
 export default function CreateOpportunityPage() {
   const router = useRouter();
+  const { canCreateOpportunities, isLoading, testUserId } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [formData, setFormData] = useState({
     name: "",
     title: "",
@@ -43,6 +44,24 @@ export default function CreateOpportunityPage() {
     location: "",
     years: [] as string[],
   });
+
+  // Redirect unauthorized users
+  useEffect(() => {
+    if (!isLoading && !canCreateOpportunities) {
+      router.push("/opportunities");
+    }
+  }, [isLoading, canCreateOpportunities, router]);
+
+  // Show loading state while checking auth
+  if (isLoading || !canCreateOpportunities) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -77,11 +96,16 @@ export default function CreateOpportunityPage() {
     setError(null);
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (testUserId) {
+        headers["X-User-Id"] = testUserId.toString();
+      }
+
       const response = await fetch("http://localhost:5000/api/opportunities", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(formData),
       });
 

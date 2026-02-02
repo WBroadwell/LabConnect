@@ -30,5 +30,26 @@ def create_app(config_name=None):
 
     with app.app_context():
         db.create_all()
+        _create_default_admin()
 
     return app
+
+
+def _create_default_admin():
+    """Create a default admin user for testing if it doesn't exist."""
+    from app.models import User
+
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@rpi.edu")
+    existing_admin = User.query.filter_by(email=admin_email).first()
+
+    if not existing_admin:
+        admin = User(
+            email=admin_email,
+            name="Admin User",
+            role="admin",
+            title="System Administrator",
+            departments=["Computer Science"],
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print(f"Created default admin user: {admin_email} (ID: {admin.id})")

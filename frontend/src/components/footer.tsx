@@ -11,7 +11,7 @@ export function Footer() {
             </span>{" "}
             is an open source project developed by{" "}
             <Link
-              href="https://rcos.io"
+              href="https://new.rcos.io"
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-primary-foreground underline underline-offset-4 hover:text-primary-foreground/70"
@@ -34,7 +34,7 @@ export function Footer() {
           </p>
           <div className="flex gap-4 text-sm text-primary-foreground/70">
             <Link
-              href="https://github.com/rcos/labconnect"
+              href="https://github.com/WBroadwell/LabConnect"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-primary-foreground"
