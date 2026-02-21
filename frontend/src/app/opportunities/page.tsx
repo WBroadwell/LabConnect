@@ -23,7 +23,6 @@ import { useAuth } from "@/context/auth-context";
 import { Opportunity } from "@/types";
 import {
   Loader2,
-  MapPin,
   Calendar,
   DollarSign,
   Bookmark,
@@ -31,7 +30,6 @@ import {
   Search,
   SlidersHorizontal,
   X,
-  Clock,
 } from "lucide-react";
 
 // Filter types
@@ -83,7 +81,7 @@ export default function OpportunitiesPage() {
   useEffect(() => {
     async function fetchOpportunities() {
       try {
-        const response = await fetch("http://localhost:5000/api/opportunities");
+        const response = await fetch("/api/opportunities");
         if (!response.ok) {
           throw new Error("Failed to fetch opportunities");
         }
@@ -106,7 +104,7 @@ export default function OpportunitiesPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/users/${user.id}/saved-opportunities/${opportunityId}`,
+        `/api/users/${user.id}/saved-opportunities/${opportunityId}`,
         {
           method: isSaved ? "DELETE" : "POST",
           headers: {
@@ -658,83 +656,65 @@ export default function OpportunitiesPage() {
             const isSaving = savingIds.has(opportunity.id);
 
             return (
-              <Card
-                key={opportunity.id}
-                className="group relative hover:shadow-md transition-shadow"
-              >
-                {/* Save Button */}
-                {isAuthenticated && (
-                  <button
-                    onClick={() => handleSaveToggle(opportunity.id, isSaved)}
-                    disabled={isSaving}
-                    className={`absolute right-3 top-3 z-10 rounded-full p-2 transition-all duration-200 ${
-                      isSaved
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground"
-                    } ${isSaving ? "cursor-wait" : "cursor-pointer"}`}
-                    title={isSaved ? "Unsave opportunity" : "Save opportunity"}
-                  >
-                    {isSaving ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : isSaved ? (
-                      <BookmarkCheck className="h-5 w-5" />
-                    ) : (
-                      <Bookmark className="h-5 w-5" />
-                    )}
-                  </button>
-                )}
-                <CardHeader className="pr-14">
-                  <CardTitle className="text-lg">{opportunity.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{opportunity.name}</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-4 w-4 shrink-0" />
-                      <span>{opportunity.location}</span>
-                    </div>
-                    {opportunity.application_due && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-4 w-4 shrink-0" />
-                        <span>Due: {opportunity.application_due}</span>
-                      </div>
-                    )}
-                    {(opportunity.start_date || opportunity.end_date) && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4 shrink-0" />
-                        <span>
-                          {opportunity.start_date && opportunity.end_date
-                            ? `${opportunity.start_date} - ${opportunity.end_date}`
-                            : opportunity.start_date
-                            ? `Starts: ${opportunity.start_date}`
-                            : `Ends: ${opportunity.end_date}`}
-                        </span>
-                      </div>
-                    )}
-                    {opportunity.hourlyPay > 0 && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <DollarSign className="h-4 w-4 shrink-0" />
-                        <span>${opportunity.hourlyPay}/hr</span>
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-1 pt-2">
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                        {opportunity.type}
-                      </span>
-                      {opportunity.credits.length > 0 && (
-                        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-                          {opportunity.credits.join(", ")} credits
-                        </span>
+              <Link key={opportunity.id} href={`/opportunities/${opportunity.id}`}>
+                <Card className="group relative hover:shadow-md transition-shadow cursor-pointer h-full">
+                  {/* Save Button */}
+                  {isAuthenticated && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSaveToggle(opportunity.id, isSaved);
+                      }}
+                      disabled={isSaving}
+                      className={`absolute right-3 top-3 z-10 rounded-full p-2 transition-all duration-200 ${
+                        isSaved
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground"
+                      } ${isSaving ? "cursor-wait" : "cursor-pointer"}`}
+                      title={isSaved ? "Unsave opportunity" : "Save opportunity"}
+                    >
+                      {isSaving ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : isSaved ? (
+                        <BookmarkCheck className="h-5 w-5" />
+                      ) : (
+                        <Bookmark className="h-5 w-5" />
                       )}
+                    </button>
+                  )}
+                  <CardHeader className="pr-14">
+                    <CardTitle className="text-lg">{opportunity.title}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{opportunity.name}</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      {opportunity.application_due && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4 shrink-0" />
+                          <span>Due: {opportunity.application_due}</span>
+                        </div>
+                      )}
+                      {opportunity.hourlyPay > 0 && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <DollarSign className="h-4 w-4 shrink-0" />
+                          <span>${opportunity.hourlyPay}/hr</span>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-1 pt-2">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          {opportunity.type}
+                        </span>
+                        {opportunity.credits.length > 0 && (
+                          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+                            {opportunity.credits.join(", ")} credits
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {opportunity.description && (
-                      <p className="pt-2 text-muted-foreground line-clamp-2">
-                        {opportunity.description}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

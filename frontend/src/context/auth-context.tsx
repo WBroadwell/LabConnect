@@ -31,8 +31,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers["X-User-Id"] = testUserId.toString();
       }
 
-      const response = await fetch(`${API_URL}/api/auth/me`, {
+      const response = await fetch(`/api/auth/me`, {
         credentials: "include",
         headers,
       });
@@ -86,12 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = () => {
     // Redirect to backend login endpoint
-    window.location.href = `${API_URL}/api/login`;
+    window.location.href = `/api/login`;
   };
 
   const logout = async () => {
     try {
-      await fetch(`${API_URL}/api/logout`, {
+      await fetch(`/api/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -106,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const exchangeCodeForToken = async (code: string): Promise<{ registered: boolean }> => {
-    const response = await fetch(`${API_URL}/api/token`, {
+    const response = await fetch(`/api/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

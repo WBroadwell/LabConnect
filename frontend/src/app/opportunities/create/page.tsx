@@ -105,7 +105,7 @@ export default function CreateOpportunityPage() {
         headers["X-User-Id"] = testUserId.toString();
       }
 
-      const response = await fetch("http://localhost:5000/api/opportunities", {
+      const response = await fetch("/api/opportunities", {
         method: "POST",
         headers,
         body: JSON.stringify(formData),

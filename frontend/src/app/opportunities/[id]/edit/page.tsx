@@ -64,7 +64,7 @@ export default function EditOpportunityPage() {
     async function fetchOpportunity() {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/opportunities/${opportunityId}`
+          `/api/opportunities/${opportunityId}`
         );
         if (!response.ok) {
           throw new Error("Opportunity not found");
@@ -144,7 +144,7 @@ export default function EditOpportunityPage() {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/opportunities/${opportunityId}`,
+        `/api/opportunities/${opportunityId}`,
         {
           method: "PUT",
           headers,

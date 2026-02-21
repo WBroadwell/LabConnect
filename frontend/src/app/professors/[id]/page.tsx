@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 import { type User, type Opportunity } from "@/types";
 
 export default function ProfessorProfilePage() {
+  const router = useRouter();
   const params = useParams();
   const professorId = params.id as string;
   const [professor, setProfessor] = useState<User | null>(null);
@@ -31,7 +32,7 @@ export default function ProfessorProfilePage() {
       try {
         // Fetch professor details
         const profResponse = await fetch(
-          `http://localhost:5000/api/professors/${professorId}`
+          `/api/professors/${professorId}`
         );
         if (!profResponse.ok) {
           if (profResponse.status === 404) {
@@ -46,7 +47,7 @@ export default function ProfessorProfilePage() {
 
         // Fetch professor's opportunities
         const oppResponse = await fetch(
-          `http://localhost:5000/api/users/${professorId}/opportunities`
+          `/api/users/${professorId}/opportunities`
         );
         if (oppResponse.ok) {
           const oppData = await oppResponse.json();
@@ -75,12 +76,10 @@ export default function ProfessorProfilePage() {
   if (error || !professor) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <Link href="/departments">
-          <Button variant="ghost" className="mb-6 gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Departments
-          </Button>
-        </Link>
+        <Button variant="ghost" className="mb-6 gap-2" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
         <div className="rounded-lg border border-border bg-muted/30 p-12 text-center">
           <p className="text-muted-foreground">{error || "Professor not found."}</p>
         </div>
@@ -90,12 +89,10 @@ export default function ProfessorProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <Link href="/departments">
-        <Button variant="ghost" className="mb-6 gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Departments
-        </Button>
-      </Link>
+      <Button variant="ghost" className="mb-6 gap-2" onClick={() => router.back()}>
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </Button>
 
       {/* Professor Profile Card */}
       <Card className="mb-8 overflow-hidden">

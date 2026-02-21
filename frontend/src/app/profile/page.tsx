@@ -60,7 +60,6 @@ export default function ProfilePage() {
   const [unsavingId, setUnsavingId] = useState<string | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [editName, setEditName] = useState("");
   const [editDepartment, setEditDepartment] = useState("");
   const [editOffice, setEditOffice] = useState("");
   const [editResearchInterests, setEditResearchInterests] = useState("");
@@ -76,7 +75,6 @@ export default function ProfilePage() {
   // Initialize edit form when user loads
   useEffect(() => {
     if (user) {
-      setEditName(user.name);
       setEditDepartment(user.departments?.[0] || "");
       setEditOffice(user.office || "");
       setEditResearchInterests(user.research_interests?.join(", ") || "");
@@ -90,7 +88,7 @@ export default function ProfilePage() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/users/${user.id}/opportunities`
+          `/api/users/${user.id}/opportunities`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch opportunities");
@@ -118,7 +116,7 @@ export default function ProfilePage() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/users/${user.id}/saved-opportunities`,
+          `/api/users/${user.id}/saved-opportunities`,
           {
             headers: {
               "X-User-Id": testUserId.toString(),
@@ -149,7 +147,7 @@ export default function ProfilePage() {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/opportunities/${opportunityId}`,
+        `/api/opportunities/${opportunityId}`,
         {
           method: "DELETE",
           headers,
@@ -175,7 +173,7 @@ export default function ProfilePage() {
     setUnsavingId(opportunityId);
     try {
       const response = await fetch(
-        `http://localhost:5000/api/users/${user.id}/saved-opportunities/${opportunityId}`,
+        `/api/users/${user.id}/saved-opportunities/${opportunityId}`,
         {
           method: "DELETE",
           headers: {
@@ -208,7 +206,7 @@ export default function ProfilePage() {
       try {
         setIsUpdatingProfile(true);
         const response = await fetch(
-          `http://localhost:5000/api/users/${user.id}/profile`,
+          `/api/users/${user.id}/profile`,
           {
             method: "PUT",
             headers: {
@@ -246,7 +244,6 @@ export default function ProfilePage() {
         .filter((interest) => interest.length > 0);
 
       const updateData: Record<string, unknown> = {
-        name: editName,
         departments: editDepartment ? [editDepartment] : [],
       };
 
@@ -257,7 +254,7 @@ export default function ProfilePage() {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/users/${user.id}/profile`,
+        `/api/users/${user.id}/profile`,
         {
           method: "PUT",
           headers: {
@@ -365,15 +362,7 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
+                <h1 className="text-2xl font-bold">{user?.name}</h1>
                 <div>
                   <Label htmlFor="department">Department</Label>
                   <Select value={editDepartment} onValueChange={setEditDepartment}>
@@ -512,72 +501,74 @@ export default function ProfilePage() {
           )}
 
           {!isLoading && !error && opportunities.length > 0 && (
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {opportunities.map((opportunity) => (
-                <Card key={opportunity.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{opportunity.title}</CardTitle>
-                        <CardDescription>{opportunity.name}</CardDescription>
+                <Card
+                  key={opportunity.id}
+                  className="h-full cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => router.push(`/opportunities/${opportunity.id}`)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg leading-snug">{opportunity.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">{opportunity.name}</p>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/opportunities/${opportunity.id}/edit`}>
-                            <Pencil className="mr-1 h-4 w-4" />
-                            Edit
-                          </Link>
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              disabled={deletingId === opportunity.id}
-                            >
-                              {deletingId === opportunity.id ? (
-                                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="mr-1 h-4 w-4" />
-                              )}
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Opportunity</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete &quot;{opportunity.title}&quot;?
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(opportunity.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs text-primary">
+                        {opportunity.type}
+                      </span>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {opportunity.location}
-                      </div>
-                      <div className="flex items-center gap-1">
+                  <CardContent className="pt-0">
+                    {opportunity.application_due && (
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
                         <Calendar className="h-4 w-4" />
                         Due: {opportunity.application_due}
                       </div>
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                        {opportunity.type}
-                      </span>
+                    )}
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/opportunities/${opportunity.id}/edit`)}
+                      >
+                        <Pencil className="mr-1 h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={deletingId === opportunity.id}
+                          >
+                            {deletingId === opportunity.id ? (
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="mr-1 h-3 w-3" />
+                            )}
+                            Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Opportunity</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete &quot;{opportunity.title}&quot;?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(opportunity.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </CardContent>
                 </Card>
