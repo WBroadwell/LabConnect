@@ -337,7 +337,7 @@ export default function AboutPage() {
             with the software over a network.
           </p>
           <p className="text-sm">
-            Copyright &copy; 2025 Rafael Cenzano & LabConnect Team
+            Copyright &copy; LabConnect Team
           </p>
         </CardContent>
       </Card>

@@ -348,7 +348,7 @@ export default function OpportunitiesPage() {
             placeholder="Search by title or lab name..."
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="pl-10"
+            className="pl-10 bg-card"
           />
         </div>
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

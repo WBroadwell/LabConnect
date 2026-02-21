@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,12 +32,14 @@ export default function CreateOpportunityPage() {
   const { canCreateOpportunities, isLoading, testUserId } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [formData, setFormData] = useState({
     name: "",
     title: "",
     application_due: "",
     type: "",
-    hourlyPay: 0,
+    hourlyPay: "",
     credits: [] as string[],
     description: "",
     recommended_experience: "",
@@ -65,17 +67,26 @@ export default function CreateOpportunityPage() {
     );
   }
 
+  const clearFieldError = (key: string) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "hourlyPay" ? parseFloat(value) || 0 : value,
-    }));
+    clearFieldError(name);
+    if (name === "start_date" || name === "end_date") clearFieldError("dates");
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
+    clearFieldError(name);
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -97,6 +108,32 @@ export default function CreateOpportunityPage() {
     setIsSubmitting(true);
     setError(null);
 
+    const today = new Date().toISOString().split("T")[0];
+    const errors: Record<string, string> = {};
+
+    if (!formData.name.trim()) errors.name = "Professor/Lab Name is required.";
+    if (!formData.title.trim()) errors.title = "Opportunity Title is required.";
+    if (!formData.location.trim()) errors.location = "Location is required.";
+    if (formData.application_due && formData.application_due < today)
+      errors.application_due = "Application deadline cannot be in the past.";
+    if (formData.end_date && formData.end_date < today)
+      errors.dates = "End date cannot be in the past.";
+    else if (formData.start_date && formData.end_date && formData.end_date <= formData.start_date)
+      errors.dates = "End date must be after start date.";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setIsSubmitting(false);
+      const fieldOrder = ["name", "title", "application_due", "dates", "location"];
+      for (const field of fieldOrder) {
+        if (errors[field] && fieldRefs.current[field]) {
+          fieldRefs.current[field]!.scrollIntoView({ behavior: "smooth", block: "center" });
+          break;
+        }
+      }
+      return;
+    }
+
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -108,7 +145,10 @@ export default function CreateOpportunityPage() {
       const response = await fetch("/api/opportunities", {
         method: "POST",
         headers,
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          hourlyPay: parseFloat(formData.hourlyPay) || 0,
+        }),
       });
 
       if (!response.ok) {
@@ -123,6 +163,8 @@ export default function CreateOpportunityPage() {
       setIsSubmitting(false);
     }
   };
+
+  const errCls = "border-destructive focus-visible:ring-destructive";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -141,7 +183,10 @@ export default function CreateOpportunityPage() {
               </div>
             )}
 
-            <div className="space-y-2">
+            <div
+              className="space-y-2"
+              ref={(el) => { fieldRefs.current["name"] = el; }}
+            >
               <Label htmlFor="name">Professor/Lab Name</Label>
               <Input
                 id="name"
@@ -149,11 +194,17 @@ export default function CreateOpportunityPage() {
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="e.g., Dr. Smith's Lab"
-                required
+                className={fieldErrors.name ? errCls : ""}
               />
+              {fieldErrors.name && (
+                <p className="text-sm text-destructive">{fieldErrors.name}</p>
+              )}
             </div>
 
-            <div className="space-y-2">
+            <div
+              className="space-y-2"
+              ref={(el) => { fieldRefs.current["title"] = el; }}
+            >
               <Label htmlFor="title">Opportunity Title</Label>
               <Input
                 id="title"
@@ -161,12 +212,18 @@ export default function CreateOpportunityPage() {
                 value={formData.title}
                 onChange={handleInputChange}
                 placeholder="e.g., Machine Learning Research Assistant"
-                required
+                className={fieldErrors.title ? errCls : ""}
               />
+              {fieldErrors.title && (
+                <p className="text-sm text-destructive">{fieldErrors.title}</p>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+              <div
+                className="space-y-2"
+                ref={(el) => { fieldRefs.current["application_due"] = el; }}
+              >
                 <Label htmlFor="application_due">Application Deadline (Optional)</Label>
                 <Input
                   id="application_due"
@@ -174,7 +231,11 @@ export default function CreateOpportunityPage() {
                   type="date"
                   value={formData.application_due}
                   onChange={handleInputChange}
+                  className={fieldErrors.application_due ? errCls : ""}
                 />
+                {fieldErrors.application_due && (
+                  <p className="text-sm text-destructive">{fieldErrors.application_due}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -197,7 +258,10 @@ export default function CreateOpportunityPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div
+              className="grid gap-4 sm:grid-cols-2"
+              ref={(el) => { fieldRefs.current["dates"] = el; }}
+            >
               <div className="space-y-2">
                 <Label htmlFor="start_date">Start Date (Optional)</Label>
                 <Input
@@ -206,6 +270,7 @@ export default function CreateOpportunityPage() {
                   type="date"
                   value={formData.start_date}
                   onChange={handleInputChange}
+                  className={fieldErrors.dates ? errCls : ""}
                 />
               </div>
 
@@ -217,8 +282,13 @@ export default function CreateOpportunityPage() {
                   type="date"
                   value={formData.end_date}
                   onChange={handleInputChange}
+                  className={fieldErrors.dates ? errCls : ""}
                 />
               </div>
+
+              {fieldErrors.dates && (
+                <p className="sm:col-span-2 text-sm text-destructive">{fieldErrors.dates}</p>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -236,7 +306,10 @@ export default function CreateOpportunityPage() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div
+                className="space-y-2"
+                ref={(el) => { fieldRefs.current["location"] = el; }}
+              >
                 <Label htmlFor="location">Location</Label>
                 <Input
                   id="location"
@@ -244,8 +317,11 @@ export default function CreateOpportunityPage() {
                   value={formData.location}
                   onChange={handleInputChange}
                   placeholder="e.g., Lally Hall 101"
-                  required
+                  className={fieldErrors.location ? errCls : ""}
                 />
+                {fieldErrors.location && (
+                  <p className="text-sm text-destructive">{fieldErrors.location}</p>
+                )}
               </div>
             </div>
 
