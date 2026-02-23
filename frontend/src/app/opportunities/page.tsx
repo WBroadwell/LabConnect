@@ -738,27 +738,33 @@ export default function OpportunitiesPage() {
                           <span>Due: {opportunity.application_due}</span>
                         </div>
                       )}
-                      {opportunity.hourlyPay > 0 && (
+                      {(opportunity.hourlyPay > 0 || opportunity.credits.length > 0) && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <DollarSign className="h-4 w-4 shrink-0" />
-                          <span>${opportunity.hourlyPay}/hr</span>
+                          <span>
+                            {[
+                              opportunity.hourlyPay > 0 ? `$${opportunity.hourlyPay}/hr` : null,
+                              opportunity.credits.length > 0 ? `${opportunity.credits.join(", ")} credits` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
                         </div>
                       )}
-                      <div className="flex flex-wrap gap-1 pt-2">
+                      <div className="flex flex-wrap gap-1 pt-1">
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                           {opportunity.type}
                         </span>
-                        {opportunity.credits.length > 0 && (
-                          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-                            {opportunity.credits.join(", ")} credits
-                          </span>
-                        )}
-                        {opportunity.recommended_majors?.length > 0 && opportunity.recommended_majors.map((major) => (
-                          <span key={major} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                            {major}
-                          </span>
-                        ))}
                       </div>
+                      {opportunity.recommended_majors?.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {opportunity.recommended_majors.map((major) => (
+                            <span key={major} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                              {major}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
