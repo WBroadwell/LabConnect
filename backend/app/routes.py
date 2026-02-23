@@ -483,7 +483,7 @@ def get_department(department_name):
 
     # Find matching department (case-insensitive)
     matching_dept = None
-    for dept in DEPARTMENT_DESCRIPTIONS.keys():
+    for dept in DEPARTMENT_DESCRIPTIONS:
         if dept.lower() == decoded_name.lower():
             matching_dept = dept
             break

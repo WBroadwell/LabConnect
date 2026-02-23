@@ -12,16 +12,16 @@ export default function CallbackPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const code = searchParams.get("code");
-
-    if (!code) {
-      setError("No authentication code provided");
-      return;
-    }
-
     async function handleCallback() {
+      const code = searchParams.get("code");
+
+      if (!code) {
+        setError("No authentication code provided");
+        return;
+      }
+
       try {
-        const result = await exchangeCodeForToken(code!);
+        const result = await exchangeCodeForToken(code);
 
         if (result.registered) {
           // User exists, redirect to home or previous page
