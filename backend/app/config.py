@@ -10,8 +10,7 @@ class Config:
 
     # SAML Configuration
     SAML_CONFIG = os.getenv(
-        "SAML_CONFIG",
-        str(Path(__file__).resolve().parent.parent / "config" / "saml")
+        "SAML_CONFIG", str(Path(__file__).resolve().parent.parent / "config" / "saml")
     )
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 

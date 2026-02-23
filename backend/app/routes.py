@@ -49,6 +49,7 @@ DEPARTMENT_DESCRIPTIONS = {
 # Authentication Helpers
 # =============================================================================
 
+
 def generate_auth_code(user_email: str, registered: bool) -> str:
     """Generate a temporary authentication code for the callback flow."""
     code = str(uuid4())
@@ -105,6 +106,7 @@ def get_current_user():
 
 def require_auth(f):
     """Decorator to require authentication for a route."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user = get_current_user()
@@ -113,11 +115,13 @@ def require_auth(f):
 
         request.current_user = user
         return f(*args, **kwargs)
+
     return decorated_function
 
 
 def require_opportunity_creator(f):
     """Decorator to require professor or admin role for creating opportunities."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user = get_current_user()
@@ -129,12 +133,14 @@ def require_opportunity_creator(f):
 
         request.current_user = user
         return f(*args, **kwargs)
+
     return decorated_function
 
 
 # =============================================================================
 # Authentication Routes
 # =============================================================================
+
 
 @api_bp.route("/login", methods=["GET"])
 def saml_login():
@@ -152,8 +158,11 @@ def saml_login():
     # Production: Use SAML authentication
     try:
         from onelogin.saml2.auth import OneLogin_Saml2_Auth
+
         req = prepare_flask_request(request)
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=current_app.config["SAML_CONFIG"])
+        auth = OneLogin_Saml2_Auth(
+            req, custom_base_path=current_app.config["SAML_CONFIG"]
+        )
         return redirect(auth.login())
     except Exception as e:
         return jsonify({"error": f"SAML configuration error: {str(e)}"}), 500
@@ -166,8 +175,11 @@ def saml_callback():
 
     try:
         from onelogin.saml2.auth import OneLogin_Saml2_Auth
+
         req = prepare_flask_request(request)
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=current_app.config["SAML_CONFIG"])
+        auth = OneLogin_Saml2_Auth(
+            req, custom_base_path=current_app.config["SAML_CONFIG"]
+        )
         auth.process_response()
         errors = auth.get_errors()
 
@@ -207,10 +219,12 @@ def exchange_code_for_token():
     user = User.query.filter_by(email=email).first()
     user_data = user.to_dict() if user else None
 
-    response = make_response({
-        "registered": registered,
-        "user": user_data,
-    })
+    response = make_response(
+        {
+            "registered": registered,
+            "user": user_data,
+        }
+    )
     set_access_cookies(response, access_token)
     set_refresh_cookies(response, refresh_token)
     return response
@@ -258,10 +272,14 @@ def register_user():
     if role == "professor":
         professor_code = data.get("professor_code")
         if not professor_code:
-            return jsonify({"error": "Professor registration requires a confirmation code"}), 400
+            return jsonify(
+                {"error": "Professor registration requires a confirmation code"}
+            ), 400
 
         # Validate the code
-        code_record = ProfessorCode.query.filter_by(code=professor_code.upper(), used=False).first()
+        code_record = ProfessorCode.query.filter_by(
+            code=professor_code.upper(), used=False
+        ).first()
         if not code_record:
             return jsonify({"error": "Invalid or already used confirmation code"}), 400
 
@@ -297,7 +315,7 @@ def generate_professor_code():
     import string
 
     # Generate a random 8-character alphanumeric code
-    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    code = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
     professor_code = ProfessorCode(
         code=code,
@@ -317,17 +335,19 @@ def list_professor_codes():
         return jsonify({"error": "Admin access required"}), 403
 
     codes = ProfessorCode.query.order_by(ProfessorCode.created_at.desc()).all()
-    return jsonify([
-        {
-            "id": c.id,
-            "code": c.code,
-            "created_at": c.created_at.isoformat() if c.created_at else None,
-            "used": c.used,
-            "used_by_email": c.used_by_email,
-            "used_at": c.used_at.isoformat() if c.used_at else None,
-        }
-        for c in codes
-    ])
+    return jsonify(
+        [
+            {
+                "id": c.id,
+                "code": c.code,
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+                "used": c.used,
+                "used_by_email": c.used_by_email,
+                "used_at": c.used_at.isoformat() if c.used_at else None,
+            }
+            for c in codes
+        ]
+    )
 
 
 @api_bp.route("/metadata", methods=["GET"])
@@ -335,8 +355,11 @@ def saml_metadata():
     """Return SAML SP metadata for IdP configuration."""
     try:
         from onelogin.saml2.auth import OneLogin_Saml2_Auth
+
         req = prepare_flask_request(request)
-        auth = OneLogin_Saml2_Auth(req, custom_base_path=current_app.config["SAML_CONFIG"])
+        auth = OneLogin_Saml2_Auth(
+            req, custom_base_path=current_app.config["SAML_CONFIG"]
+        )
         settings = auth.get_settings()
         metadata = settings.get_sp_metadata()
         errors = settings.validate_metadata(metadata)
@@ -355,6 +378,7 @@ def saml_metadata():
 # General Routes
 # =============================================================================
 
+
 @api_bp.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "healthy"})
@@ -368,14 +392,16 @@ def get_current_user_info():
         return jsonify({"authenticated": False, "user": None})
     # Include saved opportunity IDs for quick reference
     saved_ids = [opp.id for opp in user.saved]
-    return jsonify({
-        "authenticated": True,
-        "user": {
-            **user.to_dict(),
-            "can_create_opportunities": user.can_create_opportunities,
-            "saved_opportunity_ids": saved_ids,
+    return jsonify(
+        {
+            "authenticated": True,
+            "user": {
+                **user.to_dict(),
+                "can_create_opportunities": user.can_create_opportunities,
+                "saved_opportunity_ids": saved_ids,
+            },
         }
-    })
+    )
 
 
 @api_bp.route("/users", methods=["GET"])
@@ -393,7 +419,9 @@ def create_user():
 
     role = data.get("role", "student")
     if role not in ("student", "professor", "admin"):
-        return jsonify({"error": "role must be 'student', 'professor', or 'admin'"}), 400
+        return jsonify(
+            {"error": "role must be 'student', 'professor', or 'admin'"}
+        ), 400
 
     user = User(
         email=data["email"],
@@ -431,7 +459,7 @@ def get_professors():
         # Group professors by their departments
         departments = {}
         for prof in professors:
-            for dept in (prof.departments or []):
+            for dept in prof.departments or []:
                 if dept not in departments:
                     departments[dept] = []
                 departments[dept].append(prof.to_dict())
@@ -459,17 +487,19 @@ def get_departments():
     # Count professors per department
     department_counts = {}
     for prof in professors:
-        for dept in (prof.departments or []):
+        for dept in prof.departments or []:
             department_counts[dept] = department_counts.get(dept, 0) + 1
 
     # Build response with only departments that have professors
     departments = []
     for dept_name, count in sorted(department_counts.items()):
-        departments.append({
-            "name": dept_name,
-            "description": DEPARTMENT_DESCRIPTIONS.get(dept_name, ""),
-            "professor_count": count,
-        })
+        departments.append(
+            {
+                "name": dept_name,
+                "description": DEPARTMENT_DESCRIPTIONS.get(dept_name, ""),
+                "professor_count": count,
+            }
+        )
 
     return jsonify(departments)
 
@@ -479,6 +509,7 @@ def get_department(department_name):
     """Get a specific department with its professors."""
     # URL decode and normalize the department name
     import urllib.parse
+
     decoded_name = urllib.parse.unquote(department_name)
 
     # Find matching department (case-insensitive)
@@ -494,15 +525,18 @@ def get_department(department_name):
     # Get professors in this department
     professors = User.query.filter_by(role="professor").all()
     dept_professors = [
-        prof.to_dict() for prof in professors
+        prof.to_dict()
+        for prof in professors
         if matching_dept in (prof.departments or [])
     ]
 
-    return jsonify({
-        "name": matching_dept,
-        "description": DEPARTMENT_DESCRIPTIONS.get(matching_dept, ""),
-        "professors": dept_professors,
-    })
+    return jsonify(
+        {
+            "name": matching_dept,
+            "description": DEPARTMENT_DESCRIPTIONS.get(matching_dept, ""),
+            "professors": dept_professors,
+        }
+    )
 
 
 @api_bp.route("/opportunities", methods=["GET"])
@@ -560,7 +594,10 @@ def update_opportunity(opportunity_id):
     if not opportunity:
         return jsonify({"error": "Opportunity not found"}), 404
 
-    if opportunity.created_by_id != request.current_user.id and not request.current_user.is_admin:
+    if (
+        opportunity.created_by_id != request.current_user.id
+        and not request.current_user.is_admin
+    ):
         return jsonify({"error": "Not authorized to edit this opportunity"}), 403
 
     data = request.get_json()
@@ -602,7 +639,10 @@ def delete_opportunity(opportunity_id):
     if not opportunity:
         return jsonify({"error": "Opportunity not found"}), 404
 
-    if opportunity.created_by_id != request.current_user.id and not request.current_user.is_admin:
+    if (
+        opportunity.created_by_id != request.current_user.id
+        and not request.current_user.is_admin
+    ):
         return jsonify({"error": "Not authorized to delete this opportunity"}), 403
 
     db.session.delete(opportunity)
@@ -635,7 +675,9 @@ def get_saved_opportunities(user_id):
     return jsonify([opp.to_dict() for opp in user.saved])
 
 
-@api_bp.route("/users/<int:user_id>/saved-opportunities/<string:opportunity_id>", methods=["POST"])
+@api_bp.route(
+    "/users/<int:user_id>/saved-opportunities/<string:opportunity_id>", methods=["POST"]
+)
 @require_auth
 def save_opportunity(user_id, opportunity_id):
     """Save an opportunity for a user."""
@@ -658,7 +700,10 @@ def save_opportunity(user_id, opportunity_id):
     return jsonify({"message": "Opportunity saved successfully"}), 201
 
 
-@api_bp.route("/users/<int:user_id>/saved-opportunities/<string:opportunity_id>", methods=["DELETE"])
+@api_bp.route(
+    "/users/<int:user_id>/saved-opportunities/<string:opportunity_id>",
+    methods=["DELETE"],
+)
 @require_auth
 def unsave_opportunity(user_id, opportunity_id):
     """Remove a saved opportunity for a user."""
@@ -712,8 +757,10 @@ def update_profile(user_id):
     db.session.commit()
 
     saved_ids = [opp.id for opp in user.saved]
-    return jsonify({
-        **user.to_dict(),
-        "can_create_opportunities": user.can_create_opportunities,
-        "saved_opportunity_ids": saved_ids,
-    })
+    return jsonify(
+        {
+            **user.to_dict(),
+            "can_create_opportunities": user.can_create_opportunities,
+            "saved_opportunity_ids": saved_ids,
+        }
+    )

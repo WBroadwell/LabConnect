@@ -27,7 +27,11 @@ def create_app(config_name=None):
     # CORS configuration - allow credentials for JWT cookies
     CORS(
         app,
-        resources={r"/api/*": {"origins": app.config.get("FRONTEND_URL", "http://localhost:3000")}},
+        resources={
+            r"/api/*": {
+                "origins": app.config.get("FRONTEND_URL", "http://localhost:3000")
+            }
+        },
         supports_credentials=True,
         allow_headers=["Content-Type", "X-User-Id", "X-CSRF-TOKEN"],
     )
