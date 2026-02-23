@@ -40,12 +40,12 @@ interface Filters {
   minPay: number;
   types: string[];
   years: string[];
+  majors: string[];
   startDateAfter: string;
   endDateBefore: string;
 }
 
-const OPPORTUNITY_TYPES = ["Research", "Internship", "Part-time", "Full-time", "Volunteer"];
-const YEAR_LEVELS = ["Freshman", "Sophomore", "Junior", "Senior", "Graduate"];
+import { MAJOR_OPTIONS, OPPORTUNITY_TYPES, YEAR_LEVELS } from "@/lib/constants";
 
 const defaultFilters: Filters = {
   search: "",
@@ -54,6 +54,7 @@ const defaultFilters: Filters = {
   minPay: 0,
   types: [],
   years: [],
+  majors: [],
   startDateAfter: "",
   endDateBefore: "",
 };
@@ -196,6 +197,16 @@ export default function OpportunitiesPage() {
       );
     }
 
+    // Major filter
+    if (filters.majors.length > 0) {
+      filtered = filtered.filter(
+        (opp) =>
+          !opp.recommended_majors ||
+          opp.recommended_majors.length === 0 ||
+          opp.recommended_majors.some((major) => filters.majors.includes(major))
+      );
+    }
+
     // Start date filter (show opportunities that start on or after this date)
     if (filters.startDateAfter) {
       filtered = filtered.filter((opp) => {
@@ -223,6 +234,7 @@ export default function OpportunitiesPage() {
     if (filters.minPay > 0) count++;
     if (filters.types.length > 0) count++;
     if (filters.years.length > 0) count++;
+    if (filters.majors.length > 0) count++;
     if (filters.startDateAfter) count++;
     if (filters.endDateBefore) count++;
     return count;
@@ -247,6 +259,9 @@ export default function OpportunitiesPage() {
     }
     if (filters.years.length > 0) {
       badges.push({ key: "years", label: `Years: ${filters.years.join(", ")}` });
+    }
+    if (filters.majors.length > 0) {
+      badges.push({ key: "majors", label: `Majors: ${filters.majors.join(", ")}` });
     }
     if (filters.startDateAfter) {
       badges.push({ key: "startDateAfter", label: `Starts after: ${filters.startDateAfter}` });
@@ -289,6 +304,9 @@ export default function OpportunitiesPage() {
         break;
       case "years":
         newFilters.years = [];
+        break;
+      case "majors":
+        newFilters.majors = [];
         break;
       case "startDateAfter":
         newFilters.startDateAfter = "";
@@ -513,6 +531,31 @@ export default function OpportunitiesPage() {
                 </div>
               </div>
 
+              {/* Major Filter */}
+              <div className="space-y-3">
+                <Label>Recommended Major</Label>
+                <div className="space-y-2">
+                  {MAJOR_OPTIONS.map((major) => (
+                    <div key={major} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`major-${major}`}
+                        checked={tempFilters.majors.includes(major)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setTempFilters({ ...tempFilters, majors: [...tempFilters.majors, major] });
+                          } else {
+                            setTempFilters({ ...tempFilters, majors: tempFilters.majors.filter((m) => m !== major) });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`major-${major}`} className="text-sm font-normal cursor-pointer">
+                        {major}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Duration Filters */}
               <div className="space-y-3">
                 <Label>Duration</Label>
@@ -710,6 +753,11 @@ export default function OpportunitiesPage() {
                             {opportunity.credits.join(", ")} credits
                           </span>
                         )}
+                        {opportunity.recommended_majors?.length > 0 && opportunity.recommended_majors.map((major) => (
+                          <span key={major} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                            {major}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </CardContent>

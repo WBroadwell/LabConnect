@@ -23,9 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const YEAR_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "Graduate"];
-const CREDIT_OPTIONS = ["1", "2", "3", "4"];
-const TYPE_OPTIONS = ["Research", "Internship", "Part-time", "Full-time", "Volunteer"];
+import { CREDIT_OPTIONS, MAJOR_OPTIONS, OPPORTUNITY_TYPES, YEAR_LEVELS } from "@/lib/constants";
 
 export default function CreateOpportunityPage() {
   const router = useRouter();
@@ -43,6 +41,7 @@ export default function CreateOpportunityPage() {
     credits: [] as string[],
     description: "",
     recommended_experience: "",
+    recommended_majors: [] as string[],
     location: "",
     years: [] as string[],
     start_date: "",
@@ -91,7 +90,7 @@ export default function CreateOpportunityPage() {
   };
 
   const handleCheckboxChange = (
-    field: "years" | "credits",
+    field: "years" | "credits" | "recommended_majors",
     value: string,
     checked: boolean
   ) => {
@@ -248,7 +247,7 @@ export default function CreateOpportunityPage() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TYPE_OPTIONS.map((type) => (
+                    {OPPORTUNITY_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
                       </SelectItem>
@@ -351,7 +350,7 @@ export default function CreateOpportunityPage() {
             <div className="space-y-2">
               <Label>Eligible Years</Label>
               <div className="flex flex-wrap gap-4">
-                {YEAR_OPTIONS.map((year) => (
+                {YEAR_LEVELS.map((year) => (
                   <div key={year} className="flex items-center space-x-2">
                     <Checkbox
                       id={`year-${year}`}
@@ -392,6 +391,26 @@ export default function CreateOpportunityPage() {
                 placeholder="e.g., Python programming, machine learning coursework..."
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Recommended Majors (Optional)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {MAJOR_OPTIONS.map((major) => (
+                  <div key={major} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`major-${major}`}
+                      checked={formData.recommended_majors.includes(major)}
+                      onCheckedChange={(checked) =>
+                        handleCheckboxChange("recommended_majors", major, checked as boolean)
+                      }
+                    />
+                    <Label htmlFor={`major-${major}`} className="font-normal text-sm">
+                      {major}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-4 justify-center">

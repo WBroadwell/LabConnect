@@ -16,6 +16,7 @@ export interface Opportunity {
   credits: string[];
   description: string;
   recommended_experience: string;
+  recommended_majors: string[];
   location: string;
   years: string[];
   start_date: string;
