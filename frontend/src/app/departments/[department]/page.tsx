@@ -25,7 +25,7 @@ export default function DepartmentPage() {
     async function fetchDepartment() {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/departments/${departmentParam}`
+          `/api/departments/${departmentParam}`
         );
         if (!response.ok) {
           if (response.status === 404) {

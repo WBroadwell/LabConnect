@@ -19,7 +19,6 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/opportunities", label: "Opportunities" },
   { href: "/departments", label: "Departments" },
-  { href: "/profile", label: "Profile", requiresAuth: true },
 ];
 
 export function Navbar() {
@@ -43,9 +42,7 @@ export function Navbar() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex md:items-center md:gap-4">
           <div className="flex items-center gap-1">
-            {navLinks
-              .filter((link) => !link.requiresAuth || isAuthenticated)
-              .map((link) => (
+            {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}

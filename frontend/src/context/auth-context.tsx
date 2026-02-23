@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { User } from "@/types";
 
 interface AuthUser extends User {
@@ -15,6 +15,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
   canCreateOpportunities: boolean;
   savedOpportunityIds: string[];
+  // Authentication methods
+  login: () => void;
+  logout: () => Promise<void>;
+  exchangeCodeForToken: (code: string) => Promise<{ registered: boolean }>;
   // For testing: manually set user ID (simulates SSO login)
   setTestUserId: (userId: number | null) => void;
   testUserId: number | null;
@@ -30,59 +34,107 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [testUserId, setTestUserId] = useState<number | null>(null);
+  const [testUserId, setTestUserIdState] = useState<number | null>(null);
 
-  useEffect(() => {
-    // Check localStorage for persisted test user ID
-    const storedUserId = localStorage.getItem("testUserId");
-    if (storedUserId) {
-      setTestUserId(parseInt(storedUserId, 10));
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const fetchUser = async () => {
-    if (testUserId === null) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
+  const fetchUser = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/auth/me", {
-        headers: {
-          "X-User-Id": testUserId.toString(),
-        },
+      const headers: Record<string, string> = {};
+
+      // In dev mode, also send X-User-Id header if set
+      if (testUserId !== null) {
+        headers["X-User-Id"] = testUserId.toString();
+      }
+
+      const response = await fetch(`/api/auth/me`, {
+        credentials: "include",
+        headers,
       });
       const data = await response.json();
-      console.log("Auth response:", data);
+
       if (data.authenticated) {
         setUser(data.user);
       } else {
         setUser(null);
       }
     } catch (err) {
-      // Backend might not be running - fail silently
       console.log("Auth fetch failed:", err);
       setUser(null);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testUserId]);
 
+  // Check for existing session on mount
+  useEffect(() => {
+    // Check localStorage for persisted test user ID (dev mode)
+    const storedUserId = localStorage.getItem("testUserId");
+    if (storedUserId) {
+      setTestUserIdState(parseInt(storedUserId, 10));
+    }
+    fetchUser();
+  }, [fetchUser]);
+
+  // Refetch user when testUserId changes
+  useEffect(() => {
+    if (testUserId !== null) {
+      fetchUser();
+    }
+  }, [testUserId, fetchUser]);
+
+  const login = () => {
+    // Redirect to backend login endpoint
+    window.location.href = `/api/login`;
+  };
+
+  const logout = async () => {
+    try {
+      await fetch(`/api/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.log("Logout request failed:", err);
+    }
+
+    // Clear local state
+    setUser(null);
+    localStorage.removeItem("testUserId");
+    setTestUserIdState(null);
+  };
+
+  const exchangeCodeForToken = async (code: string): Promise<{ registered: boolean }> => {
+    const response = await fetch(`/api/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ code }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Failed to exchange code for token");
+    }
+
+    const data = await response.json();
+
+    // If user is registered, fetch their data
+    if (data.registered && data.user) {
+      setUser(data.user);
+    }
+
+    return { registered: data.registered };
+  };
+
   const handleSetTestUserId = (userId: number | null) => {
-    setTestUserId(userId);
+    setTestUserIdState(userId);
     if (userId !== null) {
       localStorage.setItem("testUserId", userId.toString());
     } else {
       localStorage.removeItem("testUserId");
+      setUser(null);
     }
   };
 
@@ -112,6 +164,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: user !== null,
         canCreateOpportunities: user?.can_create_opportunities ?? false,
         savedOpportunityIds: user?.saved_opportunity_ids ?? [],
+        login,
+        logout,
+        exchangeCodeForToken,
         setTestUserId: handleSetTestUserId,
         testUserId,
         addSavedOpportunity,

@@ -25,7 +25,7 @@ export default function DepartmentsPage() {
   useEffect(() => {
     async function fetchDepartments() {
       try {
-        const response = await fetch("http://localhost:5000/api/departments");
+        const response = await fetch("/api/departments");
         if (!response.ok) {
           throw new Error("Failed to fetch departments");
         }

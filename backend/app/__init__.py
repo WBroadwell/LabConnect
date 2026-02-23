@@ -7,11 +7,14 @@ from dotenv import load_dotenv
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-from flask import Flask
-from flask_cors import CORS
+from flask import Flask  # noqa: E402
+from flask_cors import CORS  # noqa: E402
+from flask_jwt_extended import JWTManager  # noqa: E402
 
-from app.config import config
-from app.database import db
+from app.config import config  # noqa: E402
+from app.database import db  # noqa: E402
+
+jwt = JWTManager()
 
 
 def create_app(config_name=None):
@@ -21,8 +24,21 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
-    CORS(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "X-User-Id"]}})
+    # CORS configuration - allow credentials for JWT cookies
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": app.config.get("FRONTEND_URL", "http://localhost:3000")
+            }
+        },
+        supports_credentials=True,
+        allow_headers=["Content-Type", "X-User-Id", "X-CSRF-TOKEN"],
+    )
+
+    # Initialize extensions
     db.init_app(app)
+    jwt.init_app(app)
 
     from app.routes import api_bp
 
@@ -30,16 +46,17 @@ def create_app(config_name=None):
 
     with app.app_context():
         # Drop and recreate all tables for clean dev state
-        db.drop_all()
+        # db.drop_all()
         db.create_all()
-        _create_default_admin()
+        _create_default_users()
 
     return app
 
 
-def _create_default_admin():
+def _create_default_users():
     """Create default test users for development if they don't exist."""
     from sqlalchemy.exc import ProgrammingError
+
     from app.models import User
 
     admin_email = os.getenv("ADMIN_EMAIL", "admin@rpi.edu")
@@ -93,5 +110,5 @@ def _create_default_admin():
             print("Run the following command to reset the database:")
             print("\n    python reset_db.py\n")
             print("=" * 60 + "\n")
-            raise SystemExit(1)
+            raise SystemExit(1) from None
         raise

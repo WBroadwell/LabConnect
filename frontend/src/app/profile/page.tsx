@@ -47,6 +47,7 @@ import {
   Mail,
   GraduationCap,
   Briefcase,
+  Eye,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -59,8 +60,8 @@ export default function ProfilePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [unsavingId, setUnsavingId] = useState<string | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [editName, setEditName] = useState("");
   const [editDepartment, setEditDepartment] = useState("");
   const [editOffice, setEditOffice] = useState("");
   const [editResearchInterests, setEditResearchInterests] = useState("");
@@ -76,7 +77,6 @@ export default function ProfilePage() {
   // Initialize edit form when user loads
   useEffect(() => {
     if (user) {
-      setEditName(user.name);
       setEditDepartment(user.departments?.[0] || "");
       setEditOffice(user.office || "");
       setEditResearchInterests(user.research_interests?.join(", ") || "");
@@ -90,7 +90,7 @@ export default function ProfilePage() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/users/${user.id}/opportunities`
+          `/api/users/${user.id}/opportunities`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch opportunities");
@@ -118,7 +118,7 @@ export default function ProfilePage() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/users/${user.id}/saved-opportunities`,
+          `/api/users/${user.id}/saved-opportunities`,
           {
             headers: {
               "X-User-Id": testUserId.toString(),
@@ -149,7 +149,7 @@ export default function ProfilePage() {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/opportunities/${opportunityId}`,
+        `/api/opportunities/${opportunityId}`,
         {
           method: "DELETE",
           headers,
@@ -175,7 +175,7 @@ export default function ProfilePage() {
     setUnsavingId(opportunityId);
     try {
       const response = await fetch(
-        `http://localhost:5000/api/users/${user.id}/saved-opportunities/${opportunityId}`,
+        `/api/users/${user.id}/saved-opportunities/${opportunityId}`,
         {
           method: "DELETE",
           headers: {
@@ -208,7 +208,7 @@ export default function ProfilePage() {
       try {
         setIsUpdatingProfile(true);
         const response = await fetch(
-          `http://localhost:5000/api/users/${user.id}/profile`,
+          `/api/users/${user.id}/profile`,
           {
             method: "PUT",
             headers: {
@@ -246,7 +246,6 @@ export default function ProfilePage() {
         .filter((interest) => interest.length > 0);
 
       const updateData: Record<string, unknown> = {
-        name: editName,
         departments: editDepartment ? [editDepartment] : [],
       };
 
@@ -257,7 +256,7 @@ export default function ProfilePage() {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/users/${user.id}/profile`,
+        `/api/users/${user.id}/profile`,
         {
           method: "PUT",
           headers: {
@@ -295,6 +294,19 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
+      {/* Preview Mode Banner */}
+      {previewMode && (
+        <div className="mb-6 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Eye className="h-4 w-4 text-primary" />
+            <span>Previewing your public profile — this is what others see</span>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setPreviewMode(false)}>
+            Exit Preview
+          </Button>
+        </div>
+      )}
+
       {/* Profile Header Card */}
       <Card className="mb-8 overflow-hidden">
         <div className="bg-linear-to-r from-primary/20 via-primary/10 to-transparent h-32" />
@@ -316,24 +328,28 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUpdatingProfile}
-                className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
-              >
-                {isUpdatingProfile ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Camera className="h-4 w-4" />
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleProfilePictureChange}
-                className="hidden"
-              />
+              {!previewMode && (
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUpdatingProfile}
+                    className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
+                  >
+                    {isUpdatingProfile ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePictureChange}
+                    className="hidden"
+                  />
+                </>
+              )}
             </div>
           </div>
 
@@ -354,26 +370,30 @@ export default function ProfilePage() {
                     </span>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditingProfile(true)}
-                >
-                  <Pencil className="h-4 w-4 mr-1" />
-                  Edit Profile
-                </Button>
+                {!previewMode && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPreviewMode(true)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Public View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditingProfile(true)}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Edit Profile
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
+                <h1 className="text-2xl font-bold">{user?.name}</h1>
                 <div>
                   <Label htmlFor="department">Department</Label>
                   <Select value={editDepartment} onValueChange={setEditDepartment}>
@@ -475,12 +495,10 @@ export default function ProfilePage() {
         <>
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Your Opportunities</h2>
-              <p className="text-muted-foreground text-sm">
-                Opportunities you&apos;ve created for students
-              </p>
+              <h2 className="text-2xl font-bold">Posted Opportunities</h2>
+              
             </div>
-            {user?.can_create_opportunities && (
+            {user?.can_create_opportunities && !previewMode && (
               <Button asChild>
                 <Link href="/opportunities/create">Create New</Link>
               </Button>
@@ -512,21 +530,40 @@ export default function ProfilePage() {
           )}
 
           {!isLoading && !error && opportunities.length > 0 && (
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {opportunities.map((opportunity) => (
-                <Card key={opportunity.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{opportunity.title}</CardTitle>
-                        <CardDescription>{opportunity.name}</CardDescription>
+                <Card
+                  key={opportunity.id}
+                  className="h-full cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => router.push(`/opportunities/${opportunity.id}`)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg leading-snug">{opportunity.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">{opportunity.name}</p>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/opportunities/${opportunity.id}/edit`}>
-                            <Pencil className="mr-1 h-4 w-4" />
-                            Edit
-                          </Link>
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs text-primary">
+                        {opportunity.type}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {opportunity.application_due && (
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
+                        <Calendar className="h-4 w-4" />
+                        Due: {opportunity.application_due}
+                      </div>
+                    )}
+                    {!previewMode && (
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/opportunities/${opportunity.id}/edit`)}
+                        >
+                          <Pencil className="mr-1 h-3.5 w-3.5" />
+                          Edit
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -536,14 +573,14 @@ export default function ProfilePage() {
                               disabled={deletingId === opportunity.id}
                             >
                               {deletingId === opportunity.id ? (
-                                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                               ) : (
-                                <Trash2 className="mr-1 h-4 w-4" />
+                                <Trash2 className="mr-1 h-3 w-3" />
                               )}
                               Delete
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Opportunity</AlertDialogTitle>
                               <AlertDialogDescription>
@@ -563,28 +600,18 @@ export default function ProfilePage() {
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {opportunity.location}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Due: {opportunity.application_due}
-                      </div>
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                        {opportunity.type}
-                      </span>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
         </>
+      ) : previewMode ? (
+        // Student preview: saved list is private
+        <div className="rounded-lg border border-border bg-muted/30 p-12 text-center">
+          <p className="text-muted-foreground">Saved opportunities are private and not visible to others.</p>
+        </div>
       ) : (
         // Student: Show saved opportunities
         <>
