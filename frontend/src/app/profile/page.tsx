@@ -32,7 +32,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/context/auth-context";
-import { Opportunity, RPI_DEPARTMENTS } from "@/types";
+import { type Opportunity } from "@/types";
+import { RPI_DEPARTMENTS } from "@/lib/constants";
 import {
   Loader2,
   MapPin,

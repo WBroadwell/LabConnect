@@ -1,9 +1,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
-.env
+
+.env*
+!.env.example
+
 venv/
 .venv/
+
 *.egg-info/
 dist/
 build/

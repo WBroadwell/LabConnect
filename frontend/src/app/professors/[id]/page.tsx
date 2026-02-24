@@ -96,7 +96,7 @@ export default function ProfessorProfilePage() {
 
       {/* Professor Profile Card */}
       <Card className="mb-8 overflow-hidden">
-        <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent h-24" />
+        <div className="bg-linear-to-r from-primary/20 via-primary/10 to-transparent h-24" />
         <CardContent className="relative pb-6">
           {/* Profile Picture */}
           <div className="absolute -top-12 left-6">

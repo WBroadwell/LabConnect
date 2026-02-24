@@ -6,13 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, User as UserIcon, Loader2, Building2, Mail } from "lucide-react";
-import { type User } from "@/types";
-
-interface DepartmentData {
-  name: string;
-  description: string;
-  professors: User[];
-}
+import { type DepartmentData } from "@/types";
 
 export default function DepartmentPage() {
   const params = useParams();
