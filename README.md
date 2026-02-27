@@ -1,17 +1,3 @@
-
-
-
-<!-- <div align="center">
-
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Issues][issues-shield]][issues-url]
-[![Pull Request][pr-shield]][pr-url]
-[![Activity][activity-shield]][activity-url]
-[![Stargazers][stars-shield]][stars-url]
-
-</div>-->
-
 <div align="center">
 
 [![Contributors][contributors-shield]][contributors-url]
@@ -30,13 +16,24 @@
 <!-- ABOUT THE PROJECT -->
 ## About
 <div align="center">
+    <!--
     <a href="https://github.com/LabConnect-RCOS/LabConnect-Backend">
         <img src="misc/LabConnect_Logo-removebg-preview.png" alt="LabConnect Logo" width="360">
     </a>
+    </div>-->
     <br/><br/>
     <p align="center">A centralized website to connect RPI undergraduate students with research or lab positions<br>
 posted by professors, graduate students, or lab staff.</p>
 </div>
+
+## About
+
+## Contact & License
+
+[![Discord](https://img.shields.io/badge/Discord-5865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/tsaxCKjYHT)
+[![Jira](https://img.shields.io/badge/Jira-0052CC.svg?style=for-the-badge&logo=jira&logoColor=white)](https://rcoslabconnect.atlassian.net/jira/software/projects/CCS/list)
+
+Distributed under the Apache License. See [LICENSE](https://github.com/WBroadwell/LabConnect/blob/main/LICENSE) for more information.
 
 ### Built With
 
@@ -51,6 +48,45 @@ posted by professors, graduate students, or lab staff.</p>
 [![React][React]][React-url]
 [![Node.js][Node.js]][Node.js-url]
 [![Tailwind CSS][TailwindCSS]][TailwindCSS-url]
+
+## Quickstart
+
+1. Clone the repo
+```bash
+    $ git clone https://github.com/WBroadwell/LabConnect.git
+    $ cd LabConnect
+```
+2. Install backend dependencies
+```bash
+    $ python3 -m pip install -r requirements.txt
+```
+3. Install frontend dependencies
+```bash
+    $ cd frontend
+    $ npm install
+    $ cd ..
+```
+4. Set up the database
+```bash
+    $ psql -U postgres -d postgres
+    CREATE DATABASE labconnect;
+    ALTER USER postgres WITH PASSWORD 'root';
+    \q
+    $ make create
+```
+5. Set environment variables
+```bash
+    $ export VITE_BACKEND_SERVER="http://127.0.0.1:9000"
+```
+6. Run the app (in two separate terminals)
+```bash
+    # Terminal 1 - Backend
+    $ make develop
+
+    # Terminal 2 - Frontend
+    $ cd frontend && make develop
+```
+7. Visit `http://localhost:5173` in your browser
   
 ## Project Contributors
 
@@ -94,16 +130,18 @@ Running list of contributors to the LabConnect project:
         $ git clone https://github.com/LabConnect-RCOS/LabConnect-Backend.git
         ```
     * or through [Github Desktop](https://desktop.github.com/)
- * Install Python 3.12.4
-    * Mac
-        ```
-        brew install python@3.14
-        ```
-    * Windows: [here](https://www.python.org/downloads/release/python-3124/)
-    * Linux:
-        ```
-        $ sudo apt install python3
-        ```
+
+  * Install Python 3.12.4
+    * Mac:
+```
+        brew install python@3.12
+```
+   * Windows: [here](https://www.python.org/downloads/release/python-3124/)
+   * Linux:
+```
+        $ sudo apt install python3.12
+```
+
  * Install PostgreSQL
     * The application is built and tested with postgresql 17
     * Mac: [UI here](https://postgresapp.com/) or
@@ -201,7 +239,7 @@ Use the Docker container in the [packages tab](https://github.com/LabConnect-RCO
 | `JWT_SECRET_KEY` | `jwt-secret` | Secret Key for JWT |
 | `FRONTEND_URL` | None | URL to the frontend server |
 | `DB` | None | URI for postgres database eg. `postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/labconnect` |
-| `CONFIG` | `config.TestingConfig` | URL to the backend server |
+| `CONFIG` | `config.TestingConfig` | Application configuration class (e.g. `config.ProductionConfig` for production) |
 
  * Run gunicorn to test how the service runs in production
    ```bash
@@ -277,10 +315,7 @@ Use the Docker container in the [packages tab](https://github.com/LabConnect-RCO
     This command allows editing and autoreloading while making changes
 
 ## Deployment
-Create PRs to the main branch from your working branch. Make sure your new code is tested and bug free. Upon creating a merge request, a build test will make sure your code is running without errors and safe to merge to main.
-
-## Deployment
-Create PRs to the main branch. Upon merging, a build test will make sure your code is running without errors and safe to merge to main. On a completed merge the action will build and push the new docker image.
+Create a PR to the main branch from your working branch. Make sure your new code is tested and bug-free. Upon merging, a build test will verify your code runs without errors, a new Docker image will be built, and the updated container will be pushed to the packages for this repo.
 
 ### Linting
 
@@ -292,19 +327,7 @@ make lint
 ### Special Thanks
 We extend our special thanks support and opportunity provided by the RCOS community.
 
-## Contact Us
-[![Discord](https://img.shields.io/badge/Discord-5865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/tsaxCKjYHT)
-[![Jira](https://img.shields.io/badge/Jira-0052CC.svg?style=for-the-badge&logo=jira&logoColor=white)](https://rcoslabconnect.atlassian.net/jira/software/projects/CCS/list)
-
-
-## License
-
-Distributed under the Apache License. See [LICENSE](https://github.com/LabConnect-RCOS/LabConnect-Backend/blob/main/LICENSE) for more information.
-
-
-
 [contributors-shield]: https://img.shields.io/github/contributors/LabConnect-RCOS/LabConnect.svg?style=for-the-badge
-
 [contributors-url]: https://github.com/LabConnect-RCOS/LabConnect/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/LabConnect-RCOS/LabConnect.svg?style=for-the-badge
 [forks-url]: https://github.com/LabConnect-RCOS/LabConnect/network/members
