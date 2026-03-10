@@ -1,30 +1,30 @@
-<div align="center">
-
+<!-- ABOUT THE PROJECT --> 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
-[![Issues][issues-shield]][issues-url]
+[![Issues][issues-shield]][issues-url] 
 [![Pull Request][pr-shield]][pr-url]
+[![Activity][activity-shield]][activity-url] 
+[![Stargazers][stars-shield]][stars-url] 
 
-[![Activity][activity-shield]][activity-url]
-[![Stargazers][stars-shield]][stars-url]
+<div align="center"> 
+    <img src="frontend/public/LabConnect_Logo-removebg-preview.png" alt="LabConnect Logo" width="320">
+    <p>
+        A centralized platform that connects RPI students with research and lab opportunities posted by professors and graduate students.
+    <p>
+</div> 
 
-</div>
+## Table of Contents
 
+- [About](#about)
+- [License](#contact--license)
+- [Built With](#built-with)
+- [Quickstart](#quickstart)
+- [Contributors](#project-contributors)
+- [Backend Development](#backend)
+- [Frontend Development](#frontend)
+- [Testing](#testing)
+- [Deployment](#deployment)
 
-
-
-<!-- ABOUT THE PROJECT -->
-## About
-<div align="center">
-    <!--
-    <a href="https://github.com/LabConnect-RCOS/LabConnect-Backend">
-        <img src="misc/LabConnect_Logo-removebg-preview.png" alt="LabConnect Logo" width="360">
-    </a>
-    </div>-->
-    <br/><br/>
-    <p align="center">A centralized website to connect RPI undergraduate students with research or lab positions<br>
-posted by professors, graduate students, or lab staff.</p>
-</div>
 
 ## About
 
@@ -302,7 +302,7 @@ Use the Docker container in the [packages tab](https://github.com/LabConnect-RCO
     This command allows editing and autoreloading while making changes
     
 ### Linting
-* Run the linter and fix any lint issues to maintiain code quality and standards
+* Run the linter and fix any lint issues to maintain code quality and standards
     ```
     make lint
     ```
@@ -339,9 +339,8 @@ We extend our special thanks support and opportunity provided by the RCOS commun
 [pr-url]: https://github.com/LabConnect-RCOS/LabConnect/pulls
 [activity-shield]: https://img.shields.io/github/last-commit/LabConnect-RCOS/LabConnect?style=for-the-badge
 [activity-url]: https://github.com/LabConnect-RCOS/LabConnect/activity
+
 <!-- LINKS & IMAGES -->
-
-
 [Python]: https://img.shields.io/badge/Python-3776AB.svg?style=for-the-badge&logo=Python&logoColor=white
 [Python-url]: https://www.python.org/
 [Flask]: https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white
@@ -351,9 +350,6 @@ We extend our special thanks support and opportunity provided by the RCOS commun
 [SQLAlchemy]: https://img.shields.io/badge/SQLAlchemy-000000?style=for-the-badge&logo=sqlalchemy&logoColor=white
 [SQLAlchemy-url]: https://www.sqlalchemy.org/
 
-
-
-
 [TypeScript]: https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white
 [TypeScript-url]: https://www.typescriptlang.org/
 [React]: https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black
@@ -362,5 +358,3 @@ We extend our special thanks support and opportunity provided by the RCOS commun
 [Node.js-url]: https://nodejs.org/
 [TailwindCSS]: https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white
 [TailwindCSS-url]: https://tailwindcss.com/
-
-
