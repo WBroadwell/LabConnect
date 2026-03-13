@@ -1,2 +1,3 @@
 export * from "./opportunity";
-export * from "./professor";
+export * from "./user";
+export * from "./department"

@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RPI_DEPARTMENTS } from "@/types";
+import { RPI_DEPARTMENTS } from "@/lib/constants";
 import { Loader2, Info } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 

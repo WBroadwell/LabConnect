@@ -1,0 +1,6 @@
+General Structure
+
+Frontend --> Backend/api
+Backend/api --> Backend/services
+Backend/services --> Backend/models(sql)
+Returns cascade back to frontend call to backend API

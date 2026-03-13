@@ -96,7 +96,7 @@ export default function ProfessorProfilePage() {
 
       {/* Professor Profile Card */}
       <Card className="mb-8 overflow-hidden">
-        <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent h-24" />
+        <div className="bg-linear-to-r from-primary/20 via-primary/10 to-transparent h-24" />
         <CardContent className="relative pb-6">
           {/* Profile Picture */}
           <div className="absolute -top-12 left-6">
@@ -185,30 +185,27 @@ export default function ProfessorProfilePage() {
         </h2>
 
         {opportunities.length > 0 ? (
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
             {opportunities.map((opportunity) => (
               <Link key={opportunity.id} href={`/opportunities/${opportunity.id}`}>
-                <Card className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">{opportunity.title}</CardTitle>
-                    <CardDescription>{opportunity.name}</CardDescription>
+                <Card className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 h-full">
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <CardTitle className="text-base leading-snug">{opportunity.title}</CardTitle>
+                    <CardDescription className="text-xs">{opportunity.name}</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                      {opportunity.description}
-                    </p>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <CardContent className="px-4 pb-4">
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
+                        <MapPin className="h-3 w-3" />
                         {opportunity.location}
                       </div>
                       {opportunity.application_due && (
                         <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
+                          <Calendar className="h-3 w-3" />
                           Due: {opportunity.application_due}
                         </div>
                       )}
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary">
                         {opportunity.type}
                       </span>
                     </div>

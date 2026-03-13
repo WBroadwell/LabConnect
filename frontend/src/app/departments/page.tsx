@@ -5,12 +5,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, ChevronRight, Loader2, Building2 } from "lucide-react";
-
-interface Department {
-  name: string;
-  description: string;
-  professor_count: number;
-}
+import { type Department } from "@/types";
 
 function departmentToSlug(department: string): string {
   return encodeURIComponent(department);

@@ -13,6 +13,7 @@ import {
   Calendar,
   MapPin,
   Clock,
+  DollarSign,
   Bookmark,
   BookmarkCheck,
   Building2,
@@ -148,7 +149,7 @@ export default function OpportunityDetailPage() {
       <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
         {/* Left sidebar - Professor info */}
         {opportunity.creator && (
-          <div className="lg:sticky lg:top-24 lg:self-start">
+          <div>
             <Card>
               <CardContent className="pt-6">
                 {/* Profile picture */}
@@ -204,6 +205,23 @@ export default function OpportunityDetailPage() {
                     View Full Profile
                   </Button>
                 </Link>
+
+                {/* Recommended Majors */}
+                {opportunity.recommended_majors?.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-2">Recommended Majors</p>
+                    <div className="flex flex-wrap gap-1">
+                      {opportunity.recommended_majors.map((major) => (
+                        <span
+                          key={major}
+                          className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                        >
+                          {major}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -221,16 +239,6 @@ export default function OpportunityDetailPage() {
                     <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                       {opportunity.type}
                     </span>
-                    {opportunity.hourlyPay > 0 && (
-                      <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                        ${opportunity.hourlyPay}/hr
-                      </span>
-                    )}
-                    {opportunity.credits.length > 0 && (
-                      <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                        {opportunity.credits.join(", ")} credits
-                      </span>
-                    )}
                   </div>
                   <CardTitle className="text-2xl">{opportunity.title}</CardTitle>
                   <p className="mt-1 text-muted-foreground">
@@ -259,6 +267,25 @@ export default function OpportunityDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2">
+                {(opportunity.hourlyPay > 0 || opportunity.credits.length > 0) && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Compensation</p>
+                      <p className="font-medium">
+                        {[
+                          opportunity.hourlyPay > 0 ? `$${opportunity.hourlyPay}/hr` : null,
+                          opportunity.credits.length > 0 ? `${opportunity.credits.join(", ")} credits` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {opportunity.application_due && (
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">

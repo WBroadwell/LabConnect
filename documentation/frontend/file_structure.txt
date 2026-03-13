@@ -1,0 +1,65 @@
+frontend/
+├── src/
+│   ├── app/                          # Next.js App Router pages
+│   │   ├── layout.tsx                # Root layout (fonts, providers, navbar, footer)
+│   │   ├── page.tsx                  # Home / landing page
+│   │   ├── globals.css               # Global styles
+│   │   ├── favicon.ico
+│   │   ├── about/
+│   │   │   └── page.tsx              # About page
+│   │   ├── callback/
+│   │   │   └── page.tsx              # SAML auth callback handler (exchanges code for JWT)
+│   │   ├── departments/
+│   │   │   ├── page.tsx              # Departments listing page
+│   │   │   └── [department]/
+│   │   │       └── page.tsx          # Department detail page (professors list)
+│   │   ├── opportunities/
+│   │   │   ├── page.tsx              # Opportunities listing/search page
+│   │   │   ├── create/
+│   │   │   │   └── page.tsx          # Create opportunity form (professor/admin only)
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx          # Opportunity detail page
+│   │   │       └── edit/
+│   │   │           └── page.tsx      # Edit opportunity form (owner/admin only)
+│   │   ├── professors/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx          # Professor profile page
+│   │   ├── profile/
+│   │   │   └── page.tsx              # Current user profile (view/edit)
+│   │   └── register/
+│   │       └── page.tsx              # New user registration form
+│   ├── components/
+│   │   ├── navbar.tsx                # Top navigation bar (auth-aware)
+│   │   ├── footer.tsx                # Site footer
+│   │   ├── providers.tsx             # React context/session providers wrapper
+│   │   └── ui/                       # shadcn/ui component library
+│   │       ├── alert-dialog.tsx
+│   │       ├── badge.tsx
+│   │       ├── button.tsx
+│   │       ├── card.tsx
+│   │       ├── checkbox.tsx
+│   │       ├── dropdown-menu.tsx
+│   │       ├── input.tsx
+│   │       ├── label.tsx
+│   │       ├── select.tsx
+│   │       ├── sheet.tsx
+│   │       ├── slider.tsx
+│   │       └── textarea.tsx
+│   ├── context/
+│   │   └── auth-context.tsx          # AuthContext: current user state + login/logout helpers
+│   ├── lib/
+│   │   ├── constants.ts              # API base URL and other app-wide constants
+│   │   └── utils.ts                  # Utility helpers (cn, etc.)
+│   ├── types/
+│   │   ├── index.ts                  # Re-exports all types
+│   │   ├── department.ts             # Department type definitions
+│   │   ├── opportunity.ts            # Opportunity type definitions
+│   │   └── user.ts                   # User type definitions
+│   └── global.d.ts                   # Global TypeScript declarations
+├── .env.example                      # Environment variable template
+├── .gitignore
+├── .dockerignore
+├── Dockerfile
+├── next.config.ts                    # Next.js configuration
+├── package.json
+└── tsconfig.json

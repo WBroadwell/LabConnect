@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 
 const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/opportunities", label: "Opportunities" },
-  { href: "/departments", label: "Departments" },
+  { href: "/", label: "Home", requiresAuth: false },
+  { href: "/opportunities", label: "Opportunities", requiresAuth: true },
+  { href: "/departments", label: "Departments", requiresAuth: true },
 ];
 
 export function Navbar() {

@@ -1,0 +1,105 @@
+import uuid
+
+from app.database import db
+from app.exceptions import AuthorizationError, NotFoundError, ValidationError
+from app.models import Opportunity, User
+
+
+def list_opportunities() -> list[Opportunity]:
+    return Opportunity.query.all()
+
+
+def create_opportunity(data: dict, creator: User) -> Opportunity:
+    """Create a new opportunity. Raises ValidationError on missing required fields."""
+    required_fields = ["name", "title", "type", "location"]
+    for field in required_fields:
+        if not data.get(field):
+            raise ValidationError(f"{field} is required")
+
+    opportunity = Opportunity(
+        id=str(uuid.uuid4()),
+        name=data["name"],
+        title=data["title"],
+        application_due=data.get("application_due", ""),
+        type=data["type"],
+        hourly_pay=data.get("hourlyPay", 0),
+        credits=data.get("credits", []),
+        description=data.get("description", ""),
+        recommended_experience=data.get("recommended_experience", ""),
+        recommended_majors=data.get("recommended_majors", []),
+        location=data["location"],
+        years=data.get("years", []),
+        start_date=data.get("start_date", ""),
+        end_date=data.get("end_date", ""),
+        created_by_id=creator.id,
+    )
+    db.session.add(opportunity)
+    db.session.commit()
+    return opportunity
+
+
+def get_opportunity(opportunity_id: str) -> Opportunity:
+    """Return an opportunity by ID. Raises NotFoundError if not found."""
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        raise NotFoundError("Opportunity not found")
+    return opportunity
+
+
+def update_opportunity(
+    opportunity_id: str, data: dict, requesting_user: User
+) -> Opportunity:
+    """Update an opportunity. Raises NotFoundError or AuthorizationError as appropriate."""
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        raise NotFoundError("Opportunity not found")
+
+    if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
+        raise AuthorizationError("Not authorized to edit this opportunity")
+
+    field_map = {
+        "name": "name",
+        "title": "title",
+        "application_due": "application_due",
+        "type": "type",
+        "hourlyPay": "hourly_pay",
+        "credits": "credits",
+        "description": "description",
+        "recommended_experience": "recommended_experience",
+        "recommended_majors": "recommended_majors",
+        "location": "location",
+        "years": "years",
+        "start_date": "start_date",
+        "end_date": "end_date",
+    }
+    for key, attr in field_map.items():
+        if key in data:
+            setattr(opportunity, attr, data[key])
+
+    db.session.commit()
+    return opportunity
+
+
+def delete_opportunity(opportunity_id: str, requesting_user: User) -> None:
+    """Delete an opportunity. Raises NotFoundError or AuthorizationError as appropriate."""
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        raise NotFoundError("Opportunity not found")
+
+    if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
+        raise AuthorizationError("Not authorized to delete this opportunity")
+
+    db.session.delete(opportunity)
+    db.session.commit()
+
+
+def get_user_opportunities(user_id: int) -> list[Opportunity]:
+    """Return all opportunities created by a user. Raises NotFoundError if user not found."""
+    from app.database import db
+    from app.models import User
+
+    user = db.session.get(User, user_id)
+    if not user:
+        raise NotFoundError("User not found")
+
+    return Opportunity.query.filter_by(created_by_id=user_id).all()
