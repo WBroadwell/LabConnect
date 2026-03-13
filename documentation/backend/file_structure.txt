@@ -1,0 +1,44 @@
+backend/
+├── app/
+│   ├── __init__.py                   # App factory (create_app), CORS, JWT, blueprint registration
+│   ├── config.py                     # Configuration classes (dev/prod/default) from env vars
+│   ├── database.py                   # SQLAlchemy db instance
+│   ├── exceptions.py                 # Custom exception classes (APIError, NotFoundError, etc.)
+│   ├── helpers.py                    # Shared utility functions (e.g. SAML helpers)
+│   ├── api/
+│   │   ├── __init__.py               # api_bp blueprint registration; mounts all route blueprints
+│   │   ├── decorators.py             # Auth decorators (require_auth, require_professor, require_admin)
+│   │   └── routes/
+│   │       ├── __init__.py
+│   │       ├── auth.py               # /api/auth  — SAML login, callback, token refresh, logout
+│   │       ├── users.py              # /api/users — profile read/update
+│   │       ├── opportunities.py      # /api/opportunities — CRUD for research opportunities
+│   │       ├── professors.py         # /api/professors — list professors, professor profiles
+│   │       ├── departments.py        # /api/departments — list departments and their professors
+│   │       ├── saved.py              # /api/saved — save/unsave opportunities for a user
+│   │       ├── admin.py              # /api/admin — admin-only actions (professor codes, user management)
+│   │       └── health.py             # /api/health — health check endpoint
+│   ├── models/
+│   │   ├── __init__.py               # Re-exports all models
+│   │   ├── user.py                   # User model + saved_opportunities association table
+│   │   ├── opportunity.py            # Opportunity model
+│   │   └── auth.py                   # AuthCode and ProfessorCode models
+│   └── services/
+│       ├── __init__.py
+│       ├── auth_service.py           # SAML flow, code generation, JWT issuance
+│       ├── user_service.py           # User lookup, creation, profile updates
+│       ├── opportunity_service.py    # Opportunity CRUD, filtering, pagination
+│       ├── professor_service.py      # Professor listing and profile retrieval
+│       ├── department_service.py     # Department listing and professor grouping
+│       └── saved_service.py          # Save/unsave logic, saved list retrieval
+├── config/
+│   └── saml/
+│       └── settings.json             # SAML SP/IdP metadata and certificate paths
+├── .env                              # Local environment variables (not committed)
+├── .env.example                      # Environment variable template
+├── .gitignore
+├── .dockerignore
+├── Dockerfile
+├── requirements.txt                  # Python dependencies
+├── ruff.toml                         # Linter configuration
+└── run.py                            # Entrypoint: calls create_app() and runs Flask dev server
