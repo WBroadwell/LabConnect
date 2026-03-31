@@ -22,6 +22,7 @@ class Opportunity(db.Model):
 
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     creator = db.relationship("User", back_populates="opportunities")
+    status = db.Column(db.String(20), nullable=False, default="active")
 
     def to_dict(self, include_creator=True):
         data = {

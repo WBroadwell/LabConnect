@@ -5,8 +5,12 @@ from app.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.models import Opportunity, User
 
 
+# def list_opportunities() -> list[Opportunity]:
+# return Opportunity.query.all()
+
+
 def list_opportunities() -> list[Opportunity]:
-    return Opportunity.query.all()
+    return Opportunity.query.filter_by(status="active").all()
 
 
 def create_opportunity(data: dict, creator: User) -> Opportunity:
@@ -32,7 +36,9 @@ def create_opportunity(data: dict, creator: User) -> Opportunity:
         start_date=data.get("start_date", ""),
         end_date=data.get("end_date", ""),
         created_by_id=creator.id,
+        status="active",
     )
+
     db.session.add(opportunity)
     db.session.commit()
     return opportunity
@@ -89,7 +95,9 @@ def delete_opportunity(opportunity_id: str, requesting_user: User) -> None:
     if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
         raise AuthorizationError("Not authorized to delete this opportunity")
 
-    db.session.delete(opportunity)
+    #db.session.delete(opportunity)
+    opportunity.status = "deleted"
+
     db.session.commit()
 
 
@@ -103,3 +111,23 @@ def get_user_opportunities(user_id: int) -> list[Opportunity]:
         raise NotFoundError("User not found")
 
     return Opportunity.query.filter_by(created_by_id=user_id).all()
+
+def archive_opportunity(opportunity_id: str, requesting_user: User) -> Opportunity:
+    opportunity = get_opportunity(opportunity_id)
+
+    if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
+        raise AuthorizationError("Not authorized")
+
+    opportunity.status = "past"
+    db.session.commit()
+    return opportunity
+
+def reopen_opportunity(opportunity_id: str, requesting_user: User) -> Opportunity:
+    opportunity = get_opportunity(opportunity_id)
+
+    if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
+        raise AuthorizationError("Not authorized")
+
+    opportunity.status = "active"
+    db.session.commit()
+    return opportunity
