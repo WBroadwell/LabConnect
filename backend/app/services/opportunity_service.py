@@ -110,7 +110,11 @@ def get_user_opportunities(user_id: int) -> list[Opportunity]:
     if not user:
         raise NotFoundError("User not found")
 
-    return Opportunity.query.filter_by(created_by_id=user_id).all()
+    #return Opportunity.query.filter_by(created_by_id=user_id).all()
+    return Opportunity.query.filter_by(
+    created_by_id=user_id,
+    status="active"
+).all()
 
 def archive_opportunity(opportunity_id: str, requesting_user: User) -> Opportunity:
     opportunity = get_opportunity(opportunity_id)
@@ -131,3 +135,18 @@ def reopen_opportunity(opportunity_id: str, requesting_user: User) -> Opportunit
     opportunity.status = "active"
     db.session.commit()
     return opportunity
+
+def permanent_delete_opportunity(opportunity_id: str, requesting_user: User) -> None:
+    opportunity = get_opportunity(opportunity_id)
+
+    if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
+        raise AuthorizationError("Not authorized")
+
+    db.session.delete(opportunity)
+    db.session.commit()
+
+def get_past_opportunities(user_id: int) -> list[Opportunity]:
+    return Opportunity.query.filter_by(
+        created_by_id=user_id,
+        status="past"
+    ).all()
