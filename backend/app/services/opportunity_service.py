@@ -10,7 +10,11 @@ from app.models import Opportunity, User
 
 
 def list_opportunities() -> list[Opportunity]:
-    return Opportunity.query.filter_by(status="active").all()
+    return (
+        Opportunity.query.filter_by(status="active")
+        .filter(Opportunity.status != "deleted")
+        .all()
+    )
 
 
 def create_opportunity(data: dict, creator: User) -> Opportunity:
@@ -49,6 +53,8 @@ def get_opportunity(opportunity_id: str) -> Opportunity:
     opportunity = db.session.get(Opportunity, opportunity_id)
     if not opportunity:
         raise NotFoundError("Opportunity not found")
+    if opportunity.status == "deleted":
+        raise NotFoundError("Opportunity previously deleted")
     return opportunity
 
 
@@ -62,6 +68,9 @@ def update_opportunity(
 
     if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
         raise AuthorizationError("Not authorized to edit this opportunity")
+
+    if opportunity.status == "deleted":
+        raise ValidationError("Cannot edit a deleted opportunity")
 
     field_map = {
         "name": "name",
@@ -95,14 +104,13 @@ def delete_opportunity(opportunity_id: str, requesting_user: User) -> None:
     if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
         raise AuthorizationError("Not authorized to delete this opportunity")
 
-    #db.session.delete(opportunity)
     opportunity.status = "deleted"
 
     db.session.commit()
 
 
 def get_user_opportunities(user_id: int) -> list[Opportunity]:
-    """Return all opportunities created by a user. Raises NotFoundError if user not found."""
+    """Return all opportunities created by a user.  NotFoundError if user not found."""
     from app.database import db
     from app.models import User
 
@@ -110,11 +118,16 @@ def get_user_opportunities(user_id: int) -> list[Opportunity]:
     if not user:
         raise NotFoundError("User not found")
 
-    #return Opportunity.query.filter_by(created_by_id=user_id).all()
-    return Opportunity.query.filter_by(
-    created_by_id=user_id,
-    status="active"
-).all()
+    # return Opportunity.query.filter_by(created_by_id=user_id).all()
+    # return (
+    # Opportunity.query.filter_by(created_by_id=user_id, status="active")
+    # .query.filter(Opportunity.status != "deleted")
+    # .all()
+    # )
+    # return Opportunity.query.filter(Opportunity.created_by_id == user_id, Opportunity.status != "deleted").all()
+
+    return Opportunity.query.filter_by(created_by_id=user_id, status="active").all()
+
 
 def archive_opportunity(opportunity_id: str, requesting_user: User) -> Opportunity:
     opportunity = get_opportunity(opportunity_id)
@@ -122,9 +135,13 @@ def archive_opportunity(opportunity_id: str, requesting_user: User) -> Opportuni
     if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
         raise AuthorizationError("Not authorized")
 
+    if opportunity.status == "deleted":
+        raise ValidationError("Cannot archive deleted opportunity")
+
     opportunity.status = "past"
     db.session.commit()
     return opportunity
+
 
 def reopen_opportunity(opportunity_id: str, requesting_user: User) -> Opportunity:
     opportunity = get_opportunity(opportunity_id)
@@ -132,9 +149,13 @@ def reopen_opportunity(opportunity_id: str, requesting_user: User) -> Opportunit
     if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
         raise AuthorizationError("Not authorized")
 
+    if opportunity.status == "deleted":
+        raise ValidationError("Cannot reopen deleted opportunity")
+
     opportunity.status = "active"
     db.session.commit()
     return opportunity
+
 
 def permanent_delete_opportunity(opportunity_id: str, requesting_user: User) -> None:
     opportunity = get_opportunity(opportunity_id)
@@ -145,8 +166,14 @@ def permanent_delete_opportunity(opportunity_id: str, requesting_user: User) -> 
     db.session.delete(opportunity)
     db.session.commit()
 
+
 def get_past_opportunities(user_id: int) -> list[Opportunity]:
-    return Opportunity.query.filter_by(
-        created_by_id=user_id,
-        status="past"
-    ).all()
+    return Opportunity.query.filter_by(created_by_id=user_id, status="past").all()
+
+
+def auto_archive_expired():
+    opportunities = Opportunity.query.filter_by(status="active").all()
+    for opp in opportunities:
+        if opp.end_date and opp.end_date < datetime.now().isoformat():
+            opp.status = "past"
+    db.session.commit()
