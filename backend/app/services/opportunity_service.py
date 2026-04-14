@@ -3,18 +3,11 @@ import uuid
 from app.database import db
 from app.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.models import Opportunity, User
-
-
-# def list_opportunities() -> list[Opportunity]:
-# return Opportunity.query.all()
+from datetime import datetime
 
 
 def list_opportunities() -> list[Opportunity]:
-    return (
-        Opportunity.query.filter_by(status="active")
-        .filter(Opportunity.status != "deleted")
-        .all()
-    )
+    return Opportunity.query.filter_by(status="active").all()
 
 
 def create_opportunity(data: dict, creator: User) -> Opportunity:
@@ -51,6 +44,7 @@ def create_opportunity(data: dict, creator: User) -> Opportunity:
 def get_opportunity(opportunity_id: str) -> Opportunity:
     """Return an opportunity by ID. Raises NotFoundError if not found."""
     opportunity = db.session.get(Opportunity, opportunity_id)
+
     if not opportunity:
         raise NotFoundError("Opportunity not found")
     if opportunity.status == "deleted":
@@ -62,7 +56,8 @@ def update_opportunity(
     opportunity_id: str, data: dict, requesting_user: User
 ) -> Opportunity:
     """Update an opportunity. Raises NotFoundError or AuthorizationError as appropriate."""
-    opportunity = db.session.get(Opportunity, opportunity_id)
+    # opportunity = db.session.get(Opportunity, opportunity_id)
+    opportunity = get_opportunity(opportunity_id)
     if not opportunity:
         raise NotFoundError("Opportunity not found")
 
@@ -97,7 +92,8 @@ def update_opportunity(
 
 def delete_opportunity(opportunity_id: str, requesting_user: User) -> None:
     """Delete an opportunity. Raises NotFoundError or AuthorizationError as appropriate."""
-    opportunity = db.session.get(Opportunity, opportunity_id)
+    # opportunity = db.session.get(Opportunity, opportunity_id)
+    opportunity = get_opportunity(opportunity_id)
     if not opportunity:
         raise NotFoundError("Opportunity not found")
 
@@ -174,6 +170,11 @@ def get_past_opportunities(user_id: int) -> list[Opportunity]:
 def auto_archive_expired():
     opportunities = Opportunity.query.filter_by(status="active").all()
     for opp in opportunities:
-        if opp.end_date and opp.end_date < datetime.now().isoformat():
-            opp.status = "past"
-    db.session.commit()
+        if opp.end_date:
+            try:
+                end = datetime.fromisoformat(opp.end_date)
+                if end < datetime.now():
+                    opp.status = "past"
+            except ValueError:
+                continue  # This is a bad date so skip
+    db.session.comit()
