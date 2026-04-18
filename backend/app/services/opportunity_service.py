@@ -178,3 +178,19 @@ def auto_archive_expired():
             except ValueError:
                 continue  # This is a bad date so skip
     db.session.comit()
+
+
+def restore_opportunity(opportunity_id: str, requesting_user: User) -> Opportunity:
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        raise NotFoundError("Opportunity not found")
+
+    if opportunity.created_by_id != requesting_user.id and not requesting_user.is_admin:
+        raise AuthorizationError("Not authorized")
+
+    if opportunity.status != "deleted":
+        raise ValidationError("Opportunity is not deleted")
+
+    opportunity.status = "past"  # or "active" if you prefer
+    db.session.commit()
+    return opportunity
