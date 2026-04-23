@@ -16,6 +16,8 @@ RUN npm ci
 COPY . .
 ARG BACKEND_URL=http://localhost:5000
 ENV BACKEND_URL=$BACKEND_URL
+ARG NEXT_PUBLIC_APP_ENV=production
+ENV NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV
 RUN npm run build
 
 # Final stage: Node.js serving standalone output

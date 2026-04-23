@@ -67,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check for existing session on mount
   useEffect(() => {
-    // Check localStorage for persisted test user ID (dev mode)
     const storedUserId = localStorage.getItem("testUserId");
     if (storedUserId) {
       setTestUserIdState(parseInt(storedUserId, 10));
