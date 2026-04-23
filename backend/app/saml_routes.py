@@ -7,28 +7,6 @@ from app.services import auth_service
 saml_bp = Blueprint("saml", __name__)
 
 
-@saml_bp.route("/login", methods=["GET"])
-def saml_login():
-    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
-
-    if current_app.config.get("TESTING"):
-        test_email = request.args.get("email", "test@rpi.edu")
-        user = User.query.filter_by(email=test_email).first()
-        registered = user is not None
-        code = auth_service.generate_auth_code(test_email, registered)
-        return redirect(f"{frontend_url}/callback?code={code}")
-
-    try:
-        from onelogin.saml2.auth import OneLogin_Saml2_Auth
-
-        req = prepare_flask_request(request)
-        auth = OneLogin_Saml2_Auth(
-            req, custom_base_path=current_app.config["SAML_CONFIG"]
-        )
-        return redirect(auth.login())
-    except Exception as e:
-        return jsonify({"error": f"SAML configuration error: {str(e)}"}), 500
-
 
 @saml_bp.route("/callback", methods=["POST"])
 def saml_callback():
