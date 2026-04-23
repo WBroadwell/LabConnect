@@ -22,8 +22,8 @@ services:
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
       FRONTEND_URL: ${FRONTEND_URL}
-    expose:
-      - "9000"
+    ports:
+      - "9000:9000"
     depends_on:
       db:
         condition: service_healthy

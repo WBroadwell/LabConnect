@@ -41,8 +41,10 @@ def create_app(config_name=None):
     jwt.init_app(app)
 
     from app.api import api_bp
+    from app.saml_routes import saml_bp
 
     app.register_blueprint(api_bp)
+    app.register_blueprint(saml_bp)
 
     with app.app_context():
         # Drop and recreate all tables for clean dev state
