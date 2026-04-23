@@ -37,7 +37,7 @@ services:
     environment:
       BACKEND_URL: http://backend:9000
     ports:
-      - "8080:80"
+      - "3000:80"
     cap_add:
       - NET_BIND_SERVICE
     depends_on:
