@@ -47,71 +47,24 @@ def create_app(config_name=None):
     app.register_blueprint(saml_bp)
 
     with app.app_context():
-        # Drop and recreate all tables for clean dev state
-        # db.drop_all()
+        db.drop_all(checkfirst=True)
         db.create_all()
-        _create_default_users()
+        _seed_admin()
 
     return app
 
 
-def _create_default_users():
-    """Create default test users for development if they don't exist."""
-    from sqlalchemy.exc import ProgrammingError
-
+def _seed_admin():
+    """Create a local admin user for bypassing SSO in development."""
     from app.models import User
 
     admin_email = os.getenv("ADMIN_EMAIL", "admin@rpi.edu")
-
-    try:
-        existing_admin = User.query.filter_by(email=admin_email).first()
-
-        if not existing_admin:
-            # Create admin user (ID: 1)
-            admin = User(
-                email=admin_email,
-                name="Admin User",
-                role="professor",
-                is_admin=True,
-                title="System Administrator",
-                departments=["Computer Science"],
-            )
-            db.session.add(admin)
-
-            # Create test professor (ID: 2)
-            professor = User(
-                email="professor@rpi.edu",
-                name="Dr. Jane Smith",
-                role="professor",
-                title="Associate Professor",
-                departments=["Computer Science"],
-                office="Amos Eaton 123",
-                research_interests=["Machine Learning", "Data Science"],
-            )
-            db.session.add(professor)
-
-            # Create test student (ID: 3)
-            student = User(
-                email="student@rpi.edu",
-                name="John Doe",
-                role="student",
-                departments=["Computer Science"],
-            )
-            db.session.add(student)
-
-            db.session.commit()
-            print(f"Created default admin user: {admin_email} (ID: {admin.id})")
-            print(f"Created test professor: professor@rpi.edu (ID: {professor.id})")
-            print(f"Created test student: student@rpi.edu (ID: {student.id})")
-    except ProgrammingError as e:
-        db.session.rollback()
-        if "column" in str(e).lower() and "does not exist" in str(e).lower():
-            print("\n" + "=" * 60)
-            print("DATABASE SCHEMA OUT OF DATE")
-            print("=" * 60)
-            print("The database schema doesn't match the models.")
-            print("Run the following command to reset the database:")
-            print("\n    python reset_db.py\n")
-            print("=" * 60 + "\n")
-            raise SystemExit(1) from None
-        raise
+    if not User.query.filter_by(email=admin_email).first():
+        db.session.add(User(
+            email=admin_email,
+            name="Admin",
+            role="professor",
+            is_admin=True,
+            departments=[],
+        ))
+        db.session.commit()
