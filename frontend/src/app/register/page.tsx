@@ -14,12 +14,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RPI_DEPARTMENTS } from "@/lib/constants";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+
+function getCsrfToken(): string {
+  const match = document.cookie.match(/csrf_access_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { refreshUser } = useAuth();
+  const { refreshUser, isAdminRcsid } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +46,7 @@ export default function RegisterPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-CSRF-TOKEN": getCsrfToken(),
         },
         credentials: "include",
         body: JSON.stringify({
@@ -75,6 +81,12 @@ export default function RegisterPage() {
           <CardDescription>
             Tell us a bit about yourself to get started with LabConnect.
           </CardDescription>
+          {isAdminRcsid && (
+            <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-primary mt-2">
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+              Your account will have admin privileges.
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -140,25 +152,27 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="professorCode">Professor Confirmation Code</Label>
-                  <Input
-                    id="professorCode"
-                    value={formData.professorCode}
-                    onChange={(e) => setFormData({ ...formData, professorCode: e.target.value.toUpperCase() })}
-                    placeholder="Enter your 8-character code"
-                    required
-                    maxLength={8}
-                    className="mt-1 font-mono uppercase"
-                  />
-                  <div className="flex items-start gap-2 mt-2 text-xs text-muted-foreground">
-                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                    <p>
-                      Professor registration requires a confirmation code from a LabConnect administrator.
-                      Contact your department or the RCOS team if you need a code.
-                    </p>
+                {!isAdminRcsid && (
+                  <div>
+                    <Label htmlFor="professorCode">Professor Confirmation Code</Label>
+                    <Input
+                      id="professorCode"
+                      value={formData.professorCode}
+                      onChange={(e) => setFormData({ ...formData, professorCode: e.target.value.toUpperCase() })}
+                      placeholder="Enter your 8-character code"
+                      required
+                      maxLength={8}
+                      className="mt-1 font-mono uppercase"
+                    />
+                    <div className="flex items-start gap-2 mt-2 text-xs text-muted-foreground">
+                      <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                      <p>
+                        Professor registration requires a confirmation code from a LabConnect administrator.
+                        Contact your department or the RCOS team if you need a code.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             )}
 

@@ -79,7 +79,7 @@ export function Navbar() {
                     <p className="font-medium">{user?.name}</p>
                     <p className="text-muted-foreground text-xs">{user?.email}</p>
                     <p className="text-muted-foreground text-xs capitalize">
-                      Role: {user?.role}
+                      Role: {user?.role}{user?.is_admin && " (Admin)"}
                     </p>
                   </div>
                   <DropdownMenuSeparator />

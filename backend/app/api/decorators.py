@@ -48,7 +48,7 @@ def require_opportunity_creator(f):
         if not user:
             return jsonify({"error": "Authentication required"}), 401
         if not user.can_create_opportunities:
-            return jsonify({"error": "Professor or admin role required"}), 403
+            return jsonify({"error": "Professor or admin access required"}), 403
         request.current_user = user
         return f(*args, **kwargs)
 

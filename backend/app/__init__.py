@@ -71,7 +71,8 @@ def _create_default_users():
             admin = User(
                 email=admin_email,
                 name="Admin User",
-                role="admin",
+                role="professor",
+                is_admin=True,
                 title="System Administrator",
                 departments=["Computer Science"],
             )

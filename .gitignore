@@ -47,3 +47,6 @@ yarn-error.log*
 
 # SAML CONFIG
 backend/config/saml/settings.json
+
+# Admin RCSID list
+backend/config/admin_rcsids.json

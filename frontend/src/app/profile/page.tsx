@@ -87,7 +87,7 @@ export default function ProfilePage() {
   // Fetch user's created opportunities (for professors)
   useEffect(() => {
     async function fetchCreatedOpportunities() {
-      if (!user?.id || user.role === "student") return;
+      if (!user?.id || !isProfessor) return;
 
       try {
         const response = await fetch(
@@ -105,12 +105,13 @@ export default function ProfilePage() {
       }
     }
 
-    if (user?.id && user.role !== "student") {
+    const canCreate = user?.role === "professor" || user?.is_admin;
+    if (user?.id && canCreate) {
       fetchCreatedOpportunities();
-    } else if (user?.id && user.role === "student") {
+    } else if (user?.id) {
       setIsLoading(false);
     }
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, user?.is_admin]);
 
   // Fetch saved opportunities (for students)
   useEffect(() => {
@@ -251,7 +252,7 @@ export default function ProfilePage() {
       };
 
       // Only include professor-specific fields for professors
-      if (user.role === "professor" || user.role === "admin") {
+      if (user.role === "professor" || user.is_admin) {
         updateData.office = editOffice;
         updateData.research_interests = researchInterests;
       }
@@ -291,7 +292,7 @@ export default function ProfilePage() {
     );
   }
 
-  const isProfessor = user?.role === "professor" || user?.role === "admin";
+  const isProfessor = user?.role === "professor" || user?.is_admin;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -369,6 +370,11 @@ export default function ProfilePage() {
                     <span className="capitalize">
                       {user?.title || user?.role}
                     </span>
+                    {user?.is_admin && (
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+                        Admin
+                      </span>
+                    )}
                   </div>
                 </div>
                 {!previewMode && (
