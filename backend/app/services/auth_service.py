@@ -1,6 +1,5 @@
 import json
 import random
-import re
 import string
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -23,7 +22,7 @@ def _load_admin_rcsids() -> set[str]:
 
 def is_admin_rcsid(email: str) -> bool:
     rcsid = email.split("@")[0].lower()
-    return bool(re.match(r"^[a-z]{5}\d$", rcsid)) and rcsid in _load_admin_rcsids()
+    return rcsid in _load_admin_rcsids()
 
 
 def generate_auth_code(user_email: str, registered: bool) -> str:
@@ -114,7 +113,7 @@ def generate_professor_code(requesting_user: User, for_rcsid: str) -> str:
     if not requesting_user.is_admin:
         raise AuthorizationError("Admin access required")
 
-    if not re.match(r"^[a-z0-9]{1,20}$", for_rcsid.lower()):
+    if not for_rcsid:
         raise ValidationError("Invalid RCSID")
 
     code = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
