@@ -47,7 +47,9 @@ def create_app(config_name=None):
     app.register_blueprint(saml_bp)
 
     with app.app_context():
-        db.drop_all(checkfirst=True)
+        if os.getenv("RESET_DB", "").lower() == "true":
+            with db.engine.begin() as conn:
+                db.metadata.drop_all(conn, checkfirst=True)
         db.create_all()
         _seed_admin()
 
