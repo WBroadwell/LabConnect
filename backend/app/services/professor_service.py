@@ -19,6 +19,21 @@ def list_professors(group_by_department: bool = False):
     return professors
 
 
+def get_professor_opportunities(professor_id: int):
+    """
+    Return all opportunities a professor is involved in,
+    including owned opportunities and co-professor collaborations.
+    """
+    professor = get_professor(professor_id)
+
+    opportunities = Opportunity.query.filter(
+        (Opportunity.professor_id == professor.id)
+        | (Opportunity.co_professors.any(id=professor.id))
+    ).all()
+
+    return [opp.to_dict() for opp in opportunities]
+
+
 def get_professor(professor_id: int) -> User:
     """Return a professor by ID. Raises NotFoundError if not found or not a professor."""
     professor = db.session.get(User, professor_id)
@@ -59,3 +74,11 @@ def remove_co_professor_from_opportunity(opportunity_id: int, professor_id: int)
         db.session.commit()
 
     return opportunity
+
+
+def get_opportunity_co_professors(opportunity_id: int):
+    opportunity = db.session.get(Opportunity, opportunity_id)
+    if not opportunity:
+        raise NotFoundError("Opportunity not found")
+
+    return [prof.to_dict() for prof in opportunity.co_professors]
