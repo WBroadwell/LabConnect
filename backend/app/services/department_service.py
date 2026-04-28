@@ -3,6 +3,7 @@ import urllib.parse
 from app.exceptions import NotFoundError
 from app.models import User
 
+
 DEPARTMENT_DESCRIPTIONS = {
     "Biomedical Engineering": "Applying engineering principles to medicine and biology for healthcare advancements, including medical devices, tissue engineering, and biomaterials.",
     "Chemical and Biological Engineering": "Designing processes for chemical production and biological systems, spanning pharmaceuticals, energy, and sustainable manufacturing.",
