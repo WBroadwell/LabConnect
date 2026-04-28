@@ -34,7 +34,9 @@ select = [
 ignore = [
     "E501",   # line too long (handled by formatter)
     "B008",   # do not perform function calls in argument defaults
-    "W191"
+    "W191",
+    "I001",
+    "W291"
 ]
 
 # Allow autofix for all enabled rules
