@@ -7,7 +7,6 @@ from app.services import auth_service
 saml_bp = Blueprint("saml", __name__)
 
 
-
 @saml_bp.route("/callback", methods=["POST"])
 def saml_callback():
     frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")

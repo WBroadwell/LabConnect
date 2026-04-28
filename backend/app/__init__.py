@@ -62,11 +62,13 @@ def _seed_admin():
 
     admin_email = os.getenv("ADMIN_EMAIL", "admin@rpi.edu")
     if not User.query.filter_by(email=admin_email).first():
-        db.session.add(User(
-            email=admin_email,
-            name="Admin",
-            role="professor",
-            is_admin=True,
-            departments=[],
-        ))
+        db.session.add(
+            User(
+                email=admin_email,
+                name="Admin",
+                role="professor",
+                is_admin=True,
+                departments=[],
+            )
+        )
         db.session.commit()

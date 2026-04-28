@@ -9,7 +9,9 @@ from app.database import db
 from app.exceptions import ConflictError, ValidationError
 from app.models import AuthCode, ProfessorCode, User
 
-_ADMIN_RCSIDS_PATH = Path(__file__).resolve().parent.parent.parent / "config" / "admin_rcsids.json"
+_ADMIN_RCSIDS_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "config" / "admin_rcsids.json"
+)
 
 
 def _load_admin_rcsids() -> set[str]:

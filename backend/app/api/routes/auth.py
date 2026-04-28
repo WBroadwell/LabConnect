@@ -57,12 +57,15 @@ def exchange_code_for_token():
     if user and not user.is_admin and auth_service.is_admin_rcsid(email):
         user.is_admin = True
         from app.database import db
+
         db.session.commit()
 
     admin_rcsid = auth_service.is_admin_rcsid(email)
     user_data = user.to_dict() if user else None
 
-    response = make_response({"registered": registered, "user": user_data, "is_admin_rcsid": admin_rcsid})
+    response = make_response(
+        {"registered": registered, "user": user_data, "is_admin_rcsid": admin_rcsid}
+    )
     set_access_cookies(response, access_token)
     set_refresh_cookies(response, refresh_token)
     return response
