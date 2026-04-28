@@ -106,6 +106,21 @@ def register_user(email: str, data: dict) -> User:
     return user
 
 
+def register_user_from_saml(email: str, name: str, role: str) -> User:
+    """Register a new user using SAML-provided attributes, bypassing professor code check."""
+    admin = is_admin_rcsid(email)
+    user = User(
+        email=email,
+        name=name,
+        role=role,
+        is_admin=admin,
+        departments=[],
+    )
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
 def generate_professor_code(requesting_user: User, for_rcsid: str) -> str:
     """Generate a professor confirmation code for a specific RCSID. Requires admin."""
     from app.exceptions import AuthorizationError

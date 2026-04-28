@@ -21,15 +21,8 @@ function CallbackHandler() {
       }
 
       try {
-        const result = await exchangeCodeForToken(code);
-
-        if (result.registered) {
-          // User exists, redirect to home or previous page
-          router.push("/");
-        } else {
-          // New user, redirect to registration
-          router.push("/register");
-        }
+        await exchangeCodeForToken(code);
+        router.push("/");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Authentication failed");
       }

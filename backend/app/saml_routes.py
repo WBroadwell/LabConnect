@@ -24,10 +24,19 @@ def saml_callback():
 
         if not errors:
             user_info = auth.get_attributes()
-            user_id = next(iter(user_info.values()))[0] + "@rpi.edu"
-            user = User.query.filter_by(email=user_id).first()
-            registered = user is not None
-            code = auth_service.generate_auth_code(user_id, registered)
+            values_iter = iter(user_info.values())
+            name = next(values_iter)[0]
+            rcsid = next(values_iter)[0]
+            role_raw = next(values_iter)[0]
+
+            role = "professor" if role_raw == "faculty" else "student"
+            email = rcsid + "@rpi.edu"
+
+            user = User.query.filter_by(email=email).first()
+            if user is None:
+                user = auth_service.register_user_from_saml(email, name, role)
+
+            code = auth_service.generate_auth_code(email, registered=True)
             return redirect(f"{frontend_url}/callback?code={code}")
 
         error_reason = auth.get_last_error_reason()

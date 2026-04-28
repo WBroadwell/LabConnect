@@ -85,10 +85,34 @@ def logout():
     return response
 
 
-@api_bp.route("/register", methods=["POST"])
+@api_bp.route("/auth/claim-professor", methods=["POST"])
 @jwt_required()
-def register_user():
+def claim_professor():
+    from datetime import datetime
+    from app.models import ProfessorCode
+    from app.database import db
+
     email = get_jwt_identity()
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if user.role == "professor":
+        return jsonify({"error": "Already a professor"}), 400
+
     data = request.get_json()
-    user = auth_service.register_user(email, data)
-    return jsonify(user.to_dict()), 201
+    professor_code = (data.get("professor_code") or "").upper()
+    if not professor_code:
+        return jsonify({"error": "Professor code required"}), 400
+
+    rcsid = email.split("@")[0].lower()
+    code_record = ProfessorCode.query.filter_by(code=professor_code, used=False).first()
+    if not code_record or code_record.for_rcsid.lower() != rcsid:
+        return jsonify({"error": "Invalid or already used confirmation code"}), 400
+
+    code_record.used = True
+    code_record.used_by_email = email
+    code_record.used_at = datetime.now()
+    user.role = "professor"
+    db.session.commit()
+
+    return jsonify(user.to_dict())
