@@ -2,7 +2,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: "student" | "professor" | "admin";
+  role: "student" | "professor";
+  is_admin: boolean;
   title?: string;
   departments: string[];
   office?: string;

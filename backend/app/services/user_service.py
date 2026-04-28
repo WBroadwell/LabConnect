@@ -21,8 +21,8 @@ def create_user(data: dict) -> User:
         raise ValidationError("email and name are required")
 
     role = data.get("role", "student")
-    if role not in ("student", "professor", "admin"):
-        raise ValidationError("role must be 'student', 'professor', or 'admin'")
+    if role not in ("student", "professor"):
+        raise ValidationError("role must be 'student' or 'professor'")
 
     user = User(
         email=data["email"],

@@ -15,6 +15,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   canCreateOpportunities: boolean;
   savedOpportunityIds: string[];
+  isAdminRcsid: boolean;
   // Authentication methods
   login: () => void;
   logout: () => Promise<void>;
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [testUserId, setTestUserIdState] = useState<number | null>(null);
+  const [isAdminRcsid, setIsAdminRcsid] = useState(false);
 
   const fetchUser = useCallback(async () => {
     setIsLoading(true);
@@ -67,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check for existing session on mount
   useEffect(() => {
-    // Check localStorage for persisted test user ID (dev mode)
     const storedUserId = localStorage.getItem("testUserId");
     if (storedUserId) {
       setTestUserIdState(parseInt(storedUserId, 10));
@@ -103,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTestUserIdState(null);
   };
 
-  const exchangeCodeForToken = async (code: string): Promise<{ registered: boolean }> => {
+  const exchangeCodeForToken = useCallback(async (code: string): Promise<{ registered: boolean }> => {
     const response = await fetch(`/api/token`, {
       method: "POST",
       headers: {
@@ -120,13 +121,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const data = await response.json();
 
+    setIsAdminRcsid(!!data.is_admin_rcsid);
+
     // If user is registered, fetch their data
     if (data.registered && data.user) {
       setUser(data.user);
     }
 
     return { registered: data.registered };
-  };
+  }, []);
 
   const handleSetTestUserId = (userId: number | null) => {
     setTestUserIdState(userId);
@@ -164,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: user !== null,
         canCreateOpportunities: user?.can_create_opportunities ?? false,
         savedOpportunityIds: user?.saved_opportunity_ids ?? [],
+        isAdminRcsid,
         login,
         logout,
         exchangeCodeForToken,

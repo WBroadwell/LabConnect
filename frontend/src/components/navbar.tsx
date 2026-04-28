@@ -23,7 +23,9 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, isAuthenticated, setTestUserId, isLoading } = useAuth();
+  const { user, isAuthenticated, login, logout, setTestUserId, isLoading } = useAuth();
+  const isTestingMode = process.env.NEXT_PUBLIC_APP_ENV !== "production";
+  const handleSignIn = isTestingMode ? () => setTestUserId(1) : login;
 
   return (
     <nav className="border-b border-primary/20 bg-primary text-primary-foreground">
@@ -58,60 +60,52 @@ export function Navbar() {
               ))}
           </div>
 
-          {/* Auth Dropdown (for testing) */}
+          {/* Auth */}
           {!isLoading && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-primary-foreground hover:bg-primary-foreground/10"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  {isAuthenticated ? user?.name : "Sign In"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {isAuthenticated ? (
-                  <>
-                    <div className="px-2 py-1.5 text-sm">
-                      <p className="font-medium">{user?.name}</p>
-                      <p className="text-muted-foreground text-xs">{user?.email}</p>
-                      <p className="text-muted-foreground text-xs capitalize">
-                        Role: {user?.role}
-                      </p>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">
-                        <UserCircle className="mr-2 h-4 w-4" />
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTestUserId(null)}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <>
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                      Test Login (Development)
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setTestUserId(1)}>
-                      Login as Admin (ID: 1)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTestUserId(2)}>
-                      Login as Professor (ID: 2)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTestUserId(3)}>
-                      Login as Student (ID: 3)
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-primary-foreground hover:bg-primary-foreground/10"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    {user?.name}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5 text-sm">
+                    <p className="font-medium">{user?.name}</p>
+                    <p className="text-muted-foreground text-xs">{user?.email}</p>
+                    <p className="text-muted-foreground text-xs capitalize">
+                      Role: {user?.role}{user?.is_admin && " (Admin)"}
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+                onClick={handleSignIn}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Sign In
+              </Button>
+            )
           )}
         </div>
 
@@ -151,30 +145,17 @@ export function Navbar() {
                     <p className="font-medium">{user?.name}</p>
                     <p className="text-muted-foreground text-xs">{user?.email}</p>
                   </div>
-                  <DropdownMenuItem onClick={() => setTestUserId(null)}>
+                  <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                   </DropdownMenuItem>
                 </>
-              ) : (
-                <>
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    Test Login
-                  </div>
-                  <DropdownMenuItem onClick={() => setTestUserId(1)}>
-                    <User className="mr-2 h-4 w-4" />
-                    Login as Admin
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTestUserId(2)}>
-                    <User className="mr-2 h-4 w-4" />
-                    Login as Professor
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTestUserId(3)}>
-                    <User className="mr-2 h-4 w-4" />
-                    Login as Student
-                  </DropdownMenuItem>
-                </>
-              )}
+              ) : !isLoading ? (
+                <DropdownMenuItem onClick={handleSignIn}>
+                  <User className="mr-2 h-4 w-4" />
+                  Sign In
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -28,6 +28,7 @@ class User(db.Model):
     website = db.Column(db.String(200), nullable=True)
     research_interests = db.Column(db.JSON, nullable=False, default=list)
     profile_picture = db.Column(db.Text, nullable=True)
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     opportunities = db.relationship(
@@ -43,15 +44,11 @@ class User(db.Model):
 
     @property
     def is_professor(self):
-        return self.role in ("professor", "admin")
-
-    @property
-    def is_admin(self):
-        return self.role == "admin"
+        return self.role == "professor" or self.is_admin
 
     @property
     def can_create_opportunities(self):
-        return self.role in ("professor", "admin")
+        return self.role == "professor" or self.is_admin
 
     def to_dict(self, include_opportunities=False, include_saved=False):
         data = {
@@ -59,6 +56,7 @@ class User(db.Model):
             "email": self.email,
             "name": self.name,
             "role": self.role,
+            "is_admin": self.is_admin,
             "title": self.title,
             "departments": self.departments or [],
             "office": self.office,

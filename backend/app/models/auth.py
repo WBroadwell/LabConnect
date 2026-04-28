@@ -22,6 +22,7 @@ class ProfessorCode(db.Model):
     code = db.Column(db.String(8), unique=True, nullable=False)
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+    for_rcsid = db.Column(db.String(20), nullable=False)
     used = db.Column(db.Boolean, nullable=False, default=False)
     used_by_email = db.Column(db.String(120), nullable=True)
     used_at = db.Column(db.DateTime, nullable=True)
