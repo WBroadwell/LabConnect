@@ -68,6 +68,9 @@ export default function ProfilePage() {
   const [editResearchInterests, setEditResearchInterests] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isProfessor = user?.role === "professor";
+  const isStudentAdmin = user?.is_admin && user?.role !== "professor";
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -84,10 +87,10 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  // Fetch user's created opportunities (for professors)
+  // Fetch user's created opportunities (for professors only)
   useEffect(() => {
     async function fetchCreatedOpportunities() {
-      if (!user?.id || !isProfessor) return;
+      if (!user?.id || user.role !== "professor") return;
 
       try {
         const response = await fetch(
@@ -105,13 +108,12 @@ export default function ProfilePage() {
       }
     }
 
-    const canCreate = user?.role === "professor" || user?.is_admin;
-    if (user?.id && canCreate) {
+    if (user?.id && isProfessor) {
       fetchCreatedOpportunities();
     } else if (user?.id) {
       setIsLoading(false);
     }
-  }, [user?.id, user?.role, user?.is_admin]);
+  }, [user?.id, user?.role, isProfessor]);
 
   // Fetch saved opportunities (for students)
   useEffect(() => {
@@ -164,6 +166,7 @@ export default function ProfilePage() {
       }
 
       setOpportunities((prev) => prev.filter((opp) => opp.id !== opportunityId));
+      setSavedOpportunities((prev) => prev.filter((opp) => opp.id !== opportunityId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -252,7 +255,7 @@ export default function ProfilePage() {
       };
 
       // Only include professor-specific fields for professors
-      if (user.role === "professor" || user.is_admin) {
+      if (user.role === "professor") {
         updateData.office = editOffice;
         updateData.research_interests = researchInterests;
       }
@@ -291,8 +294,6 @@ export default function ProfilePage() {
       </div>
     );
   }
-
-  const isProfessor = user?.role === "professor" || user?.is_admin;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -503,7 +504,6 @@ export default function ProfilePage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Posted Opportunities</h2>
-              
             </div>
             {user?.can_create_opportunities && !previewMode && (
               <Button asChild>
@@ -615,12 +615,12 @@ export default function ProfilePage() {
           )}
         </>
       ) : previewMode ? (
-        // Student preview: saved list is private
+        // Student/student-admin preview: saved list is private
         <div className="rounded-lg border border-border bg-muted/30 p-12 text-center">
           <p className="text-muted-foreground">Saved opportunities are private and not visible to others.</p>
         </div>
       ) : (
-        // Student: Show saved opportunities
+        // Student / student admin: Show saved opportunities
         <>
           <div className="mb-4">
             <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -649,18 +649,55 @@ export default function ProfilePage() {
             <div className="grid gap-4 md:grid-cols-2">
               {savedOpportunities.map((opportunity) => (
                 <Card key={opportunity.id} className="group relative">
-                  <button
-                    onClick={() => handleUnsave(opportunity.id)}
-                    disabled={unsavingId === opportunity.id}
-                    className="absolute right-3 top-3 z-10 rounded-full bg-primary p-2 text-primary-foreground shadow-md transition-transform hover:scale-105"
-                    title="Remove from saved"
-                  >
-                    {unsavingId === opportunity.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <BookmarkCheck className="h-4 w-4" />
+                  <div className="absolute right-3 top-3 z-10 flex gap-1.5">
+                    {isStudentAdmin && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            disabled={deletingId === opportunity.id}
+                            className="rounded-full bg-destructive p-2 text-destructive-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
+                            title="Delete opportunity"
+                          >
+                            {deletingId === opportunity.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Opportunity</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete &quot;{opportunity.title}&quot;?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(opportunity.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
-                  </button>
+                    <button
+                      onClick={() => handleUnsave(opportunity.id)}
+                      disabled={unsavingId === opportunity.id}
+                      className="rounded-full bg-primary p-2 text-primary-foreground shadow-md transition-transform hover:scale-105"
+                      title="Remove from saved"
+                    >
+                      {unsavingId === opportunity.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <BookmarkCheck className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                   <CardHeader className="pr-14">
                     <CardTitle className="text-lg">{opportunity.title}</CardTitle>
                     <CardDescription>{opportunity.name}</CardDescription>

@@ -25,10 +25,15 @@ def saml_callback():
         if not errors:
             user_info = auth.get_attributes()
             values_iter = iter(user_info.values())
-            name = next(values_iter)[0]
+            raw_name = next(values_iter)[0]
             rcsid = next(values_iter)[0]
             role_raw = next(values_iter)[0]
 
+            if ", " in raw_name:
+                last, first = raw_name.split(", ", 1)
+                name = f"{first} {last}"
+            else:
+                name = raw_name
             role = "professor" if role_raw == "faculty" else "student"
             email = rcsid + "@rpi.edu"
 
